@@ -1,0 +1,4 @@
+export OP_SESSION_my="f5uyNnTPFd_9K4RCsebDvV4MR-gX-t49x413vuIKbPM"
+# This command is meant to be used with your shell's eval function.
+# Run 'eval $(op signin my)' to sign in to your 1Password account.
+# Use the --raw flag to only output the session token.

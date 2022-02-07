@@ -70,6 +70,7 @@ pub fn get_session() -> Result<Session, Box<dyn error::Error>> {
 // FIXME: if the tui is open
 // pub fn auto_refresh_session() {}
 
+
 // FIXME: instead of using serde_json::Error, use enum that also can be `Box<dyn error::Error>`
 pub fn list_items() -> Result<Value, serde_json::Error> {
     let session = get_session().unwrap();
