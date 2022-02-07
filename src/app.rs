@@ -21,8 +21,8 @@ struct App<'a> {
 
 impl<'a> App<'a> {
     fn new() -> App<'a> {
+        let headers = vec!["asdas"];
         let items = op::list_items().unwrap();
-		// FIXME: Use data from above
         App {
             state: TableState::default(),
             items: vec![
@@ -162,6 +162,7 @@ pub struct TerminalModifier {}
 impl TerminalModifier {
     pub fn new() -> Result<Self, Box<dyn Error>> {
         enable_raw_mode()?;
+        tracing::info!("Enabled terminal raw mode");
         Ok(TerminalModifier {})
     }
 }
@@ -169,14 +170,15 @@ impl TerminalModifier {
 impl Drop for TerminalModifier {
     fn drop(&mut self) {
         disable_raw_mode().unwrap();
+        tracing::info!("Disabled terminal raw mode");
     }
 }
 
 pub fn render_app() -> Result<(), Box<dyn Error>> {
     let t = TerminalModifier::new()?;
 
-	// FIXME: To be moved into TerminalModifier
-	// setup terminal
+    // FIXME: To be moved into TerminalModifier
+    // setup terminal
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture).unwrap();
     let backend = CrosstermBackend::new(stdout);
@@ -186,7 +188,7 @@ pub fn render_app() -> Result<(), Box<dyn Error>> {
     let app = App::new();
     let res = run_app(&mut terminal, app);
 
-	// FIXME: To be moved into TerminalModifier
+    // FIXME: To be moved into TerminalModifier
     // restore terminal
     execute!(
         terminal.backend_mut(),
