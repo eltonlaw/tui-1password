@@ -104,9 +104,9 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
     let normal_style = Style::default().bg(Color::Blue);
-    let header_cells = ["Header1", "Header2", "Header3"]
+    let header_cells = app.headers
         .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Red)));
+        .map(|h| Cell::from(Span::raw(h.join("_"))).style(Style::default().fg(Color::Red)));
     let header = Row::new(header_cells)
         .style(normal_style)
         .height(1)
