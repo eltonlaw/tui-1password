@@ -24,14 +24,6 @@ pub fn run() -> Result<(), io::Error> {
 
     tracing::info!("Starting new instance");
     app::render_app();
-    // let items = op::list_items().unwrap();
-    // println!("{:?}", items[0]);
-    // println!("{:?}", items[0]["overview"]["title"]);
-    // println!("{:?}", items[0]["overview"]["website"]);
-    // println!("{:?}", items[0]["overview"]["url"]);
-    // println!("{:?}", items[0]["overview"]["ainfo"]);
-    // println!("{:?}", items[0]["templateUuid"]);
-    // println!("{:?}", items[0]["updatedAt"]);
     Ok(())
 }
 
@@ -46,17 +38,6 @@ mod tests {
         assert_eq!(None, utils::get_in(&v1, &vec!["e"]));
         assert_eq!(&json!({"d": "e"}), utils::get_in(&v1, &vec!["c"]).unwrap());
         assert_eq!("e", utils::get_in(&v1, &vec!["c", "d"]).unwrap());
-    }
-
-    #[test]
-    fn serde_json_value_to_vec_test() {
-		let v1 = json!([{"a": "1"}, {"a": "2"}, {"a": "3"}]);
-        let expected = vec![
-            json!({"a": "1"}),
-            json!({"a": "2"}),
-            json!({"a": "3"}),
-        ];
-        assert_eq!(expected, utils::serde_json_value_to_vec(v1).unwrap());
     }
 
 }

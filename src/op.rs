@@ -72,7 +72,7 @@ pub fn get_session() -> Result<Session, Box<dyn error::Error>> {
 
 
 // FIXME: instead of using serde_json::Error, use enum that also can be `Box<dyn error::Error>`
-pub fn list_items() -> Result<Value, serde_json::Error> {
+pub fn list_items() -> Result<Vec<Value>, serde_json::Error> {
     let session = get_session().unwrap();
     let output = Command::new("op")
                          .env(session.name, session.token)
