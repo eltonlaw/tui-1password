@@ -13,6 +13,7 @@ use tui::{
     widgets::{Block, Borders, Cell, Row, Table, TableState},
     Frame, Terminal,
 };
+use tracing;
 use super::op;
 use super::utils;
 
@@ -168,7 +169,7 @@ pub fn render_app() -> Result<(), Box<dyn Error>> {
 
     // create app and run it
     let app = App::new(headers);
-    run_app(&mut terminal, app);
+    let res = run_app(&mut terminal, app);
 
     // FIXME: To be moved into TerminalModifier
     // restore terminal
@@ -178,6 +179,10 @@ pub fn render_app() -> Result<(), Box<dyn Error>> {
         DisableMouseCapture
     ).unwrap();
     terminal.show_cursor().unwrap();
+
+    if let Err(err) = res{
+        tracing::error!("{:?}", err);
+    }
 
     Ok(())
 }

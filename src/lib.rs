@@ -22,8 +22,8 @@ pub fn run() -> Result<(), io::Error> {
         .with_max_level(Level::TRACE)
         .init();
 
-    tracing::info!("Starting new instance");
-    app::render_app();
+    tracing::info!("Starting new instance tui-1password instance");
+    let _ = app::render_app();
     Ok(())
 }
 
