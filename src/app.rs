@@ -31,7 +31,6 @@ impl App {
             .map(|item_raw| {
                 let mut item = Vec::new();
                 for header in &headers {
-                    // let val = utils::get_in(item_raw, header).unwrap().as_str())
                     let val;
                     if let Some(x) = utils::get_in(item_raw, header) {
                         val = x.as_str().unwrap();
@@ -41,9 +40,6 @@ impl App {
                     item.push(String::from(val));
                 }
                 item
-                // FIXME: use all headers
-                // String::from(utils::get_in(v, &headers[1]).unwrap().as_str().unwrap()),
-                // String::from(utils::get_in(v, &headers[2]).unwrap().as_str().unwrap()),
             })
             .collect();
         App {
@@ -99,7 +95,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
-        .margin(5)
+        .margin(1)
         .split(f.size());
 
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
