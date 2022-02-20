@@ -10,11 +10,9 @@ pub mod utils;
 
 pub fn run() -> Result<(), io::Error> {
     let home_dir = op::home_dir();
-    // FIXME: Delete older files
+    // FIXME: Delete older files.
+    let file_appender = RollingFileAppender::new(Rotation::NEVER, home_dir, "run.log");
     // Starts a new thread that writes to a file
-    let file_appender = RollingFileAppender::new(Rotation::NEVER,
-                                                 home_dir,
-                                                 "run.log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::fmt()
         .with_writer(non_blocking)

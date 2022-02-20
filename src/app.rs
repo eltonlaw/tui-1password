@@ -85,7 +85,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
                 KeyCode::Down => app.next(),
+                KeyCode::Char('j') => app.next(),
                 KeyCode::Up => app.previous(),
+                KeyCode::Char('k') => app.previous(),
                 _ => {}
             }
         }

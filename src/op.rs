@@ -52,6 +52,7 @@ impl Session {
     }
 }
 
+/// Get directory where logs and local cache is stored
 pub fn home_dir() -> String {
     // FIXME: Make sure this exists
     format!("{}/.tui-1password", env::var("HOME").unwrap())
