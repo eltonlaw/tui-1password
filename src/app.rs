@@ -1,8 +1,7 @@
 /// Render data with TUI
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::{error::Error, io};
 use tui::{
@@ -17,6 +16,7 @@ use tracing;
 use super::op;
 use super::utils;
 use std::convert::TryFrom;
+use std::error;
 
 struct App {
     state: TableState,
@@ -25,7 +25,7 @@ struct App {
 }
 
 impl App {
-    fn new(headers: Vec<Vec<String>>) -> App {
+    fn new(headers: Vec<Vec<String>>) -> Result<App, Box<dyn error::Error>> {
         let items_raw = op::list_items().unwrap();
         let items: Vec<Vec<String>> = items_raw
             .iter()
@@ -43,11 +43,11 @@ impl App {
                 item
             })
             .collect();
-        App {
+        Ok(App {
             state: TableState::default(),
             headers,
             items,
-        }
+        })
     }
     pub fn next(&mut self) {
         let i = match self.state.selected() {
@@ -157,7 +157,7 @@ pub fn render_app() -> Result<(), Box<dyn Error>> {
         vec![String::from("overview"), String::from("ainfo")],
     ];
     // create app and run it
-    let app = App::new(headers);
+    let app = App::new(headers)?;
 
     let _t = TerminalModifier::new()?;
 

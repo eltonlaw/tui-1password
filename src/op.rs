@@ -5,10 +5,12 @@ use std::error;
 use std::fs;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
-use std::process::{exit, Command};
+use std::process::{Command};
 use std::str;
 use std::time::{Duration};
 use tracing;
+
+use super::err;
 
 // Temporary tokens from `op signin` last for 30 minutes
 static OP_TOKEN_TTL: u64 = 1800;
@@ -67,8 +69,7 @@ pub fn get_session() -> Result<Session, Box<dyn error::Error>> {
         return Ok(s);
     } else {
         tracing::error!("Failed to started new session, invalid 1password token {} ", &op_token_path);
-        println!("Not signed in. Please run `op signin > ~/.tui-1password/token`");
-        exit(1);
+        return Err(err::InvalidSessionError{ token: op_token_path }.into());
     }
 }
 

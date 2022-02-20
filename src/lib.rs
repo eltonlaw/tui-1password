@@ -6,6 +6,7 @@ use tracing_appender::rolling::{RollingFileAppender, Rotation};
 
 pub mod app;
 pub mod op;
+pub mod err;
 pub mod utils;
 
 pub fn run() -> Result<(), io::Error> {
