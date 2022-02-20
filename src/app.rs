@@ -16,6 +16,7 @@ use tui::{
 use tracing;
 use super::op;
 use super::utils;
+use std::convert::TryFrom;
 
 struct App {
     state: TableState,
@@ -119,17 +120,15 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let cells = item.iter().map(|c| Cell::from(Span::raw(c)));
         Row::new(cells).height(height as u16).bottom_margin(1)
     });
+    // FIXME: These should be calculated based on size of largest value per column and
+    // use `Length` instead
+    let percentage = u16::try_from(100/app.headers.len()).unwrap();
+    let column_widths = vec![Constraint::Percentage(percentage); app.headers.len()];
     let t = Table::new(items)
         .header(header)
         .block(Block::default().borders(Borders::ALL).title("Table"))
         .highlight_style(selected_style)
-        .widths(&[
-            // FIXME: These should be calculated based on size of largest value per column and
-            // use `Length` instead
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-        ]);
+        .widths(&column_widths);
     f.render_stateful_widget(t, rects[0], &mut app.state);
 }
 
