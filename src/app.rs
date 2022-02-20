@@ -122,9 +122,11 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .block(Block::default().borders(Borders::ALL).title("Table"))
         .highlight_style(selected_style)
         .widths(&[
-            Constraint::Percentage(50),
-            Constraint::Length(30),
-            Constraint::Min(10),
+            // FIXME: These should be calculated based on size of largest value per column and
+            // use `Length` instead
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
         ]);
     f.render_stateful_widget(t, rects[0], &mut app.state);
 }
