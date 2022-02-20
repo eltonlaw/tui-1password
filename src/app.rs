@@ -156,6 +156,8 @@ pub fn render_app() -> Result<(), Box<dyn Error>> {
         vec![String::from("overview"), String::from("url")],
         vec![String::from("overview"), String::from("ainfo")],
     ];
+    // create app and run it
+    let app = App::new(headers);
 
     let _t = TerminalModifier::new()?;
 
@@ -166,8 +168,6 @@ pub fn render_app() -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend).unwrap();
 
-    // create app and run it
-    let app = App::new(headers);
     let res = run_app(&mut terminal, app);
 
     // FIXME: To be moved into TerminalModifier
