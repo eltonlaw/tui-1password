@@ -18,8 +18,14 @@ use super::utils;
 use std::convert::TryFrom;
 use std::error;
 
+#[derive(PartialEq)]
+enum AppState {
+    ItemList,
+}
+
 struct App {
     table_state: TableState,
+    app_state: AppState,
     headers: Vec<Vec<String>>,
     items: Vec<Vec<String>>,
 }
@@ -45,11 +51,12 @@ impl App {
             .collect();
         Ok(App {
             table_state: TableState::default(),
+            app_state: AppState::ItemList,
             headers,
             items,
         })
     }
-    pub fn next(&mut self) {
+    pub fn next_item(&mut self) {
         let i = match self.table_state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
@@ -63,7 +70,7 @@ impl App {
         self.table_state.select(Some(i));
     }
 
-    pub fn previous(&mut self) {
+    pub fn previous_item(&mut self) {
         let i = match self.table_state.selected() {
             Some(i) => {
                 if i == 0 {
@@ -82,54 +89,58 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
     loop {
         terminal.draw(|f| ui(f, &mut app))?;
 
-        if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => return Ok(()),
-                KeyCode::Down => app.next(),
-                KeyCode::Char('j') => app.next(),
-                KeyCode::Up => app.previous(),
-                KeyCode::Char('k') => app.previous(),
-                _ => {}
+        if app.app_state == AppState::ItemList {
+            if let Event::Key(key) = event::read()? {
+                match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Down => app.next_item(),
+                    KeyCode::Char('j') => app.next_item(),
+                    KeyCode::Up => app.previous_item(),
+                    KeyCode::Char('k') => app.previous_item(),
+                    _ => {}
+                }
             }
         }
     }
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-    let rects = Layout::default()
-        .constraints([Constraint::Percentage(100)].as_ref())
-        .margin(1)
-        .split(f.size());
+    if app.app_state == AppState::ItemList {
+        let rects = Layout::default()
+            .constraints([Constraint::Percentage(100)].as_ref())
+            .margin(1)
+            .split(f.size());
 
-    let selected_style = Style::default().add_modifier(Modifier::REVERSED);
-    let normal_style = Style::default().bg(Color::Blue);
-    let header_cells = app.headers
-        .iter()
-        .map(|h| Cell::from(Span::raw(h.join("_"))).style(Style::default().fg(Color::Red)));
-    let header = Row::new(header_cells)
-        .style(normal_style)
-        .height(1)
-        .bottom_margin(1);
-    let items = app.items.iter().map(|item| {
-        let height = item
+        let selected_style = Style::default().add_modifier(Modifier::REVERSED);
+        let normal_style = Style::default().bg(Color::Blue);
+        let header_cells = app.headers
             .iter()
-            .map(|content| content.chars().filter(|c| *c == '\n').count())
-            .max()
-            .unwrap_or(0)
-            + 1;
-        let cells = item.iter().map(|c| Cell::from(Span::raw(c)));
-        Row::new(cells).height(height as u16).bottom_margin(1)
-    });
-    // FIXME: These should be calculated based on size of largest value per column and
-    // use `Length` instead
-    let percentage = u16::try_from(100/app.headers.len()).unwrap();
-    let column_widths = vec![Constraint::Percentage(percentage); app.headers.len()];
-    let t = Table::new(items)
-        .header(header)
-        .block(Block::default().borders(Borders::ALL).title("Table"))
-        .highlight_style(selected_style)
-        .widths(&column_widths);
-    f.render_stateful_widget(t, rects[0], &mut app.table_state);
+            .map(|h| Cell::from(Span::raw(h.join("_"))).style(Style::default().fg(Color::Red)));
+        let header = Row::new(header_cells)
+            .style(normal_style)
+            .height(1)
+            .bottom_margin(1);
+        let items = app.items.iter().map(|item| {
+            let height = item
+                .iter()
+                .map(|content| content.chars().filter(|c| *c == '\n').count())
+                .max()
+                .unwrap_or(0)
+                + 1;
+            let cells = item.iter().map(|c| Cell::from(Span::raw(c)));
+            Row::new(cells).height(height as u16).bottom_margin(1)
+        });
+        // FIXME: These should be calculated based on size of largest value per column and
+        // use `Length` instead
+        let percentage = u16::try_from(100/app.headers.len()).unwrap();
+        let column_widths = vec![Constraint::Percentage(percentage); app.headers.len()];
+        let t = Table::new(items)
+            .header(header)
+            .block(Block::default().borders(Borders::ALL).title("Table"))
+            .highlight_style(selected_style)
+            .widths(&column_widths);
+        f.render_stateful_widget(t, rects[0], &mut app.table_state);
+    }
 }
 
 pub struct TerminalModifier {}
