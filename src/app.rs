@@ -152,9 +152,9 @@ impl Drop for TerminalModifier {
 pub fn render_app() -> Result<(), Box<dyn Error>> {
     // To be taken from CLI
     let headers = vec![
-        vec![String::from("overview"), String::from("title")],
-        vec![String::from("overview"), String::from("url")],
-        vec![String::from("overview"), String::from("ainfo")],
+        vec![String::from("id")],
+        vec![String::from("title")],
+        vec![String::from("updated_at")],
     ];
     // create app and run it
     let app = App::new(headers)?;

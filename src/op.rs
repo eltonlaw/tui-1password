@@ -84,8 +84,9 @@ pub fn list_items() -> Result<Vec<Value>, serde_json::Error> {
     let session = get_session().unwrap();
     let output = Command::new("op")
                          .env(session.name, session.token)
+                         .arg("item")
                          .arg("list")
-                         .arg("items")
+                         .arg("--format=json")
                          .output().unwrap();
     let items = str::from_utf8(&output.stdout).unwrap();
 
