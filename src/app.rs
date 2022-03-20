@@ -19,7 +19,7 @@ use std::convert::TryFrom;
 use std::error;
 
 struct App {
-    state: TableState,
+    table_state: TableState,
     headers: Vec<Vec<String>>,
     items: Vec<Vec<String>>,
 }
@@ -44,13 +44,13 @@ impl App {
             })
             .collect();
         Ok(App {
-            state: TableState::default(),
+            table_state: TableState::default(),
             headers,
             items,
         })
     }
     pub fn next(&mut self) {
-        let i = match self.state.selected() {
+        let i = match self.table_state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
                     0
@@ -60,11 +60,11 @@ impl App {
             }
             None => 0,
         };
-        self.state.select(Some(i));
+        self.table_state.select(Some(i));
     }
 
     pub fn previous(&mut self) {
-        let i = match self.state.selected() {
+        let i = match self.table_state.selected() {
             Some(i) => {
                 if i == 0 {
                     self.items.len() - 1
@@ -74,7 +74,7 @@ impl App {
             }
             None => 0,
         };
-        self.state.select(Some(i));
+        self.table_state.select(Some(i));
     }
 }
 
@@ -129,7 +129,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .block(Block::default().borders(Borders::ALL).title("Table"))
         .highlight_style(selected_style)
         .widths(&column_widths);
-    f.render_stateful_widget(t, rects[0], &mut app.state);
+    f.render_stateful_widget(t, rects[0], &mut app.table_state);
 }
 
 pub struct TerminalModifier {}
