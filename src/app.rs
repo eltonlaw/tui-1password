@@ -20,7 +20,8 @@ use std::error;
 
 #[derive(PartialEq)]
 enum AppState {
-    ItemList,
+    ItemListView,
+    ItemView,
 }
 
 struct App {
@@ -51,7 +52,7 @@ impl App {
             .collect();
         Ok(App {
             table_state: TableState::default(),
-            app_state: AppState::ItemList,
+            app_state: AppState::ItemListView,
             headers,
             items,
         })
@@ -83,20 +84,30 @@ impl App {
         };
         self.table_state.select(Some(i));
     }
+
+    pub fn change_app_state(&mut self, new_app_state: AppState) {
+        self.app_state = new_app_state;
+    }
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
         terminal.draw(|f| ui(f, &mut app))?;
 
-        if app.app_state == AppState::ItemList {
-            if let Event::Key(key) = event::read()? {
+        if let Event::Key(key) = event::read()? {
+            if app.app_state == AppState::ItemListView {
                 match key.code {
                     KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Down => app.next_item(),
+                    KeyCode::Down      => app.next_item(),
                     KeyCode::Char('j') => app.next_item(),
-                    KeyCode::Up => app.previous_item(),
+                    KeyCode::Up        => app.previous_item(),
                     KeyCode::Char('k') => app.previous_item(),
+                    KeyCode::Enter     => app.change_app_state(AppState::ItemView),
+                    _ => {}
+                }
+            } else if app.app_state == AppState::ItemView {
+                match key.code {
+                    KeyCode::Char('q') => app.change_app_state(AppState::ItemListView),
                     _ => {}
                 }
             }
@@ -105,7 +116,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-    if app.app_state == AppState::ItemList {
+    if app.app_state == AppState::ItemListView {
         let rects = Layout::default()
             .constraints([Constraint::Percentage(100)].as_ref())
             .margin(1)
