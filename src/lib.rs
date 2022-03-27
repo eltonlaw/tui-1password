@@ -5,6 +5,7 @@ use tracing_appender::rolling::{RollingFileAppender, Rotation};
 // use tracing_subscriber::fmt::writer::MakeWriterExt;
 
 pub mod app;
+pub mod terminal;
 pub mod op;
 pub mod err;
 pub mod utils;

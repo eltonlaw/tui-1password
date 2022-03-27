@@ -15,6 +15,7 @@ use tui::{
 use tracing;
 use super::op;
 use super::utils;
+use super::terminal;
 use std::convert::TryFrom;
 use std::error;
 
@@ -158,23 +159,6 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     }
 }
 
-pub struct TerminalModifier {}
-
-impl TerminalModifier {
-    pub fn new() -> Result<Self, Box<dyn Error>> {
-        enable_raw_mode()?;
-        tracing::info!("Enabled terminal raw mode");
-        Ok(TerminalModifier {})
-    }
-}
-
-impl Drop for TerminalModifier {
-    fn drop(&mut self) {
-        disable_raw_mode().unwrap();
-        tracing::info!("Disabled terminal raw mode");
-    }
-}
-
 pub fn render_app() -> Result<(), Box<dyn Error>> {
     // To be taken from CLI
     let headers = vec![
@@ -186,8 +170,7 @@ pub fn render_app() -> Result<(), Box<dyn Error>> {
     let mut app = App::new(headers)?;
     app.populate_items();
 
-    let _t = TerminalModifier::new()?;
-
+    let _t = terminal::TerminalModifier::new()?;
     // FIXME: To be moved into TerminalModifier
     // setup terminal
     let mut stdout = io::stdout();
