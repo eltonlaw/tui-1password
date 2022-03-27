@@ -33,12 +33,21 @@ struct App {
 
 impl App {
     fn new(headers: Vec<Vec<String>>) -> Result<App, Box<dyn error::Error>> {
+        let items: Vec<Vec<String>> = Vec::new();
+        Ok(App {
+            table_state: TableState::default(),
+            app_state: AppState::ItemListView,
+            headers,
+            items,
+        })
+    }
+    pub fn populate_items(&mut self) {
         let items_raw = op::list_items().unwrap();
         let items: Vec<Vec<String>> = items_raw
             .iter()
             .map(|item_raw| {
                 let mut item = Vec::new();
-                for header in &headers {
+                for header in &self.headers {
                     let val;
                     if let Some(x) = utils::get_in(item_raw, header) {
                         val = x.as_str().unwrap();
@@ -50,12 +59,7 @@ impl App {
                 item
             })
             .collect();
-        Ok(App {
-            table_state: TableState::default(),
-            app_state: AppState::ItemListView,
-            headers,
-            items,
-        })
+        self.items = items;
     }
     pub fn next_item(&mut self) {
         let i = match self.table_state.selected() {
@@ -179,7 +183,8 @@ pub fn render_app() -> Result<(), Box<dyn Error>> {
         vec![String::from("updated_at")],
     ];
     // create app and run it
-    let app = App::new(headers)?;
+    let mut app = App::new(headers)?;
+    app.populate_items();
 
     let _t = TerminalModifier::new()?;
 
