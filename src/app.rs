@@ -1,11 +1,10 @@
 /// Render data with TUI
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    event::{self, Event, KeyCode},
 };
 use std::{error::Error, io};
 use tui::{
-    backend::{Backend, CrosstermBackend},
+    backend::{Backend},
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
     text::Span,
@@ -170,24 +169,8 @@ pub fn render_app() -> Result<(), Box<dyn Error>> {
     let mut app = App::new(headers)?;
     app.populate_items();
 
-    let _t = terminal::TerminalModifier::new()?;
-    // FIXME: To be moved into TerminalModifier
-    // setup terminal
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture).unwrap();
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend).unwrap();
-
-    let res = run_app(&mut terminal, app);
-
-    // FIXME: To be moved into TerminalModifier
-    // restore terminal
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    ).unwrap();
-    terminal.show_cursor().unwrap();
+    let mut tm = terminal::TerminalModifier::new()?;
+    let res = run_app(&mut tm.terminal, app);
 
     if let Err(err) = res{
         tracing::error!("{:?}", err);
