@@ -80,4 +80,18 @@ impl Session {
         serde_json::from_str(items)
 
     }
+
+    pub fn get_item(&self, item_name: &str) -> Result<Vec<Value>, serde_json::Error> {
+        let output = Command::new("op")
+                             .env(&self.name, &self.token)
+                             .arg("item")
+                             .arg("get")
+                             .arg(item_name)
+                             .arg("--format=json")
+                             .output().unwrap();
+        let items = str::from_utf8(&output.stdout).unwrap();
+
+        serde_json::from_str(items)
+
+    }
 }
