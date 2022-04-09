@@ -2,6 +2,7 @@
 use crossterm::{
     event::{self, Event, KeyCode},
 };
+use std::cmp;
 use std::env;
 use std::{error::Error, io};
 use tui::{
@@ -13,6 +14,7 @@ use tui::{
     Frame, Terminal,
 };
 use tracing;
+use serde_json::{Value};
 use super::op;
 use super::utils;
 use super::terminal;
@@ -29,7 +31,7 @@ struct App {
     table_state: TableState,
     app_state: AppState,
     headers: Vec<Vec<String>>,
-    items: Vec<Vec<String>>,
+    items: Vec<Value>,
     session: op::Session,
 }
 
@@ -41,7 +43,7 @@ pub fn home_dir() -> String {
 
 impl App {
     fn new(headers: Vec<Vec<String>>) -> Result<App, Box<dyn error::Error>> {
-        let items: Vec<Vec<String>> = Vec::new();
+        let items: Vec<Value> = Vec::new();
         let op_token_path = format!("{}/token", home_dir());
         Ok(App {
             table_state: TableState::default(),
@@ -52,24 +54,7 @@ impl App {
         })
     }
     pub fn populate_items(&mut self) {
-        let items_raw = self.session.list_items().unwrap();
-        let items: Vec<Vec<String>> = items_raw
-            .iter()
-            .map(|item_raw| {
-                let mut item = Vec::new();
-                for header in &self.headers {
-                    let val;
-                    if let Some(x) = utils::get_in(item_raw, header) {
-                        val = x.as_str().unwrap();
-                    } else {
-                        val = "";
-                    }
-                    item.push(String::from(val));
-                }
-                item
-            })
-            .collect();
-        self.items = items;
+        self.items = self.session.list_items().unwrap();
     }
     pub fn next_item(&mut self) {
         let i = match self.table_state.selected() {
@@ -145,21 +130,26 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .style(normal_style)
             .height(1)
             .bottom_margin(1);
-        let items = app.items.iter().map(|item| {
-            let height = item
-                .iter()
-                .map(|content| content.chars().filter(|c| *c == '\n').count())
-                .max()
-                .unwrap_or(0)
-                + 1;
-            let cells = item.iter().map(|c| Cell::from(Span::raw(c)));
+
+        let table_items = app.items.iter().map(|item| {
+            let mut height = 1;
+            let cells = app.headers.iter().map(|header| {
+                let val;
+                if let Some(x) = utils::get_in(item, header) {
+                    val = x.as_str().unwrap();
+                    height = cmp::max(height, val.chars().filter(|c| *c == '\n').count());
+                } else {
+                    val = "";
+                }
+                Cell::from(Span::raw(val))
+            });
             Row::new(cells).height(height as u16).bottom_margin(1)
         });
         // FIXME: These should be calculated based on size of largest value per column and
         // use `Length` instead
         let percentage = u16::try_from(100/app.headers.len()).unwrap();
         let column_widths = vec![Constraint::Percentage(percentage); app.headers.len()];
-        let t = Table::new(items)
+        let t = Table::new(table_items)
             .header(header)
             .block(Block::default().borders(Borders::ALL).title("Table"))
             .highlight_style(selected_style)
