@@ -74,6 +74,7 @@ impl Session {
                              .arg("item")
                              .arg("list")
                              .arg("--format=json")
+                             .arg("--cache")
                              .output().unwrap();
         let items = str::from_utf8(&output.stdout).unwrap();
 
@@ -88,6 +89,7 @@ impl Session {
                              .arg("get")
                              .arg(item_name)
                              .arg("--format=json")
+                             .arg("--cache")
                              .output().unwrap();
         let items = str::from_utf8(&output.stdout).unwrap();
 
