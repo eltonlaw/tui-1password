@@ -120,14 +120,14 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-    if app.app_state == AppState::ItemListView {
-        let rects = Layout::default()
-            .constraints([Constraint::Percentage(100)].as_ref())
-            .margin(1)
-            .split(f.size());
+    let rects = Layout::default()
+        .constraints([Constraint::Percentage(100)].as_ref())
+        .margin(1)
+        .split(f.size());
+    let selected_style = Style::default().add_modifier(Modifier::REVERSED);
+    let normal_style = Style::default().bg(Color::Blue);
 
-        let selected_style = Style::default().add_modifier(Modifier::REVERSED);
-        let normal_style = Style::default().bg(Color::Blue);
+    if app.app_state == AppState::ItemListView {
         let header_cells = app.headers
             .iter()
             .map(|h| Cell::from(Span::raw(h.join("_"))).style(Style::default().fg(Color::Red)));
@@ -157,6 +157,26 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let t = Table::new(table_items)
             .header(header)
             .block(Block::default().borders(Borders::ALL).title("Table"))
+            .highlight_style(selected_style)
+            .widths(&column_widths);
+        f.render_stateful_widget(t, rects[0], &mut app.table_state);
+    } else if app.app_state == AppState::ItemView {
+        let header_cells = ["field", "value"]
+            .iter()
+            .map(|h| Cell::from(Span::raw(h.to_string())).style(Style::default().fg(Color::Red)));
+        let header = Row::new(header_cells)
+            .style(normal_style)
+            .height(1)
+            .bottom_margin(1);
+        let table_items = vec![
+            Row::new(vec![Cell::from(Span::raw("field1")), Cell::from(Span::raw("value"))]),
+            Row::new(vec![Cell::from(Span::raw("field2")), Cell::from(Span::raw("value"))]),
+            Row::new(vec![Cell::from(Span::raw("field3")), Cell::from(Span::raw("value"))]),
+        ];
+        let column_widths = vec![Constraint::Percentage(50); 2];
+        let t = Table::new(table_items)
+            .header(header)
+            .block(Block::default().borders(Borders::ALL).title("Entry"))
             .highlight_style(selected_style)
             .widths(&column_widths);
         f.render_stateful_widget(t, rects[0], &mut app.table_state);
