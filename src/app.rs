@@ -84,6 +84,11 @@ impl App {
         self.table_state.select(Some(i));
     }
 
+    pub fn current_item(&self) -> &Value {
+        let i = self.table_state.selected().unwrap_or(0);
+        &self.items[i]
+    }
+
     pub fn change_app_state(&mut self, new_app_state: AppState) {
         self.app_state = new_app_state;
     }
