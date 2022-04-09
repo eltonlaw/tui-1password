@@ -1,6 +1,5 @@
 /// Interface to 1password
 use serde_json::{Value};
-use std::env;
 use std::error;
 use std::fs;
 use std::fs::File;
@@ -33,6 +32,16 @@ pub struct Session {
 }
 
 impl Session {
+    pub fn new(token_path: String) -> Result<Self, Box<dyn error::Error>> {
+        if is_valid_cache(&token_path) {
+            let s = Session::from_cache(&token_path);
+            tracing::info!("Started new session: {} {:?}", &token_path, s);
+            return Ok(s);
+        } else {
+            tracing::error!("Failed to started new session, invalid 1password token {} ", &token_path);
+            return Err(err::InvalidSessionError{ token: token_path }.into());
+        }
+    }
     // Currently only takes the first entry in the token
     pub fn from_cache(path: &String) -> Self {
         let file = File::open(path).unwrap();
@@ -52,44 +61,23 @@ impl Session {
         }
         Session { name, token }
     }
-}
 
-/// Get directory where logs and local cache is stored
-pub fn home_dir() -> String {
-    // FIXME: Make sure this exists
-    format!("{}/.tui-1password", env::var("HOME").unwrap())
-}
+    // FIXME: Refresh session
+    // pub fn refresh_session() {}
+    // FIXME: if the tui is open
+    // pub fn auto_refresh_session() {}
 
-// FIXME: Should cache this
-pub fn get_session() -> Result<Session, Box<dyn error::Error>> {
-    let op_token_path = format!("{}/token", home_dir());
-    if is_valid_cache(&op_token_path) {
-        let s = Session::from_cache(&op_token_path);
-        tracing::info!("Started new session: {} {:?}", &op_token_path, s);
-        return Ok(s);
-    } else {
-        tracing::error!("Failed to started new session, invalid 1password token {} ", &op_token_path);
-        return Err(err::InvalidSessionError{ token: op_token_path }.into());
+    // FIXME: instead of using serde_json::Error, use enum that also can be `Box<dyn error::Error>`
+    pub fn list_items(&self) -> Result<Vec<Value>, serde_json::Error> {
+        let output = Command::new("op")
+                             .env(&self.name, &self.token)
+                             .arg("item")
+                             .arg("list")
+                             .arg("--format=json")
+                             .output().unwrap();
+        let items = str::from_utf8(&output.stdout).unwrap();
+
+        serde_json::from_str(items)
+
     }
-}
-
-// FIXME: Refresh session
-// pub fn refresh_session() {}
-// FIXME: if the tui is open
-// pub fn auto_refresh_session() {}
-
-
-// FIXME: instead of using serde_json::Error, use enum that also can be `Box<dyn error::Error>`
-pub fn list_items() -> Result<Vec<Value>, serde_json::Error> {
-    let session = get_session().unwrap();
-    let output = Command::new("op")
-                         .env(session.name, session.token)
-                         .arg("item")
-                         .arg("list")
-                         .arg("--format=json")
-                         .output().unwrap();
-    let items = str::from_utf8(&output.stdout).unwrap();
-
-    serde_json::from_str(items)
-
 }

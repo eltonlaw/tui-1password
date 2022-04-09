@@ -2,6 +2,7 @@
 use crossterm::{
     event::{self, Event, KeyCode},
 };
+use std::env;
 use std::{error::Error, io};
 use tui::{
     backend::{Backend},
@@ -29,20 +30,29 @@ struct App {
     app_state: AppState,
     headers: Vec<Vec<String>>,
     items: Vec<Vec<String>>,
+    session: op::Session,
+}
+
+/// Get directory where logs and local cache is stored
+pub fn home_dir() -> String {
+    // FIXME: Make sure this exists
+    format!("{}/.tui-1password", env::var("HOME").unwrap())
 }
 
 impl App {
     fn new(headers: Vec<Vec<String>>) -> Result<App, Box<dyn error::Error>> {
         let items: Vec<Vec<String>> = Vec::new();
+        let op_token_path = format!("{}/token", home_dir());
         Ok(App {
             table_state: TableState::default(),
             app_state: AppState::ItemListView,
             headers,
             items,
+            session: op::Session::new(op_token_path)?,
         })
     }
     pub fn populate_items(&mut self) {
-        let items_raw = op::list_items().unwrap();
+        let items_raw = self.session.list_items().unwrap();
         let items: Vec<Vec<String>> = items_raw
             .iter()
             .map(|item_raw| {

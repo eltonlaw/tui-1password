@@ -11,7 +11,7 @@ pub mod err;
 pub mod utils;
 
 pub fn run() -> Result<(), io::Error> {
-    let home_dir = op::home_dir();
+    let home_dir = app::home_dir();
     // FIXME: Delete older files.
     let file_appender = RollingFileAppender::new(Rotation::NEVER, home_dir, "run.log");
     // Starts a new thread that writes to a file
