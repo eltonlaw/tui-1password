@@ -14,17 +14,6 @@ use super::err;
 // Temporary tokens from `op signin` last for 30 minutes
 static OP_TOKEN_TTL: u64 = 1800;
 
-/// True if cached token exists and created less than OP_TOKEN_TTL seconds ago
-/// FIXME: Use this
-pub fn is_valid_cache(path: &String) -> bool {
-    if let Ok(metadata) = fs::metadata(path) {
-        let token_age = metadata.modified().unwrap().elapsed().unwrap();
-        return token_age < Duration::from_secs(OP_TOKEN_TTL);
-    } else {
-        return false;
-    }
-}
-
 #[derive(Debug)]
 pub struct Session {
     pub name: String,
@@ -33,13 +22,23 @@ pub struct Session {
 
 impl Session {
     pub fn new(token_path: String) -> Result<Self, Box<dyn error::Error>> {
-        if is_valid_cache(&token_path) {
+        if Session::is_valid_cache(&token_path) {
             let s = Session::from_cache(&token_path);
             tracing::info!("Started new session: {} {:?}", &token_path, s);
             return Ok(s);
         } else {
             tracing::error!("Failed to started new session, invalid 1password token {} ", &token_path);
             return Err(err::InvalidSessionError{ token: token_path }.into());
+        }
+    }
+    /// True if cached token exists and created less than OP_TOKEN_TTL seconds ago
+    /// FIXME: Use this
+    pub fn is_valid_cache(path: &String) -> bool {
+        if let Ok(metadata) = fs::metadata(path) {
+            let token_age = metadata.modified().unwrap().elapsed().unwrap();
+            return token_age < Duration::from_secs(OP_TOKEN_TTL);
+        } else {
+            return false;
         }
     }
     // Currently only takes the first entry in the token
