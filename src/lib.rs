@@ -8,7 +8,6 @@ pub mod app;
 pub mod terminal;
 pub mod op;
 pub mod err;
-pub mod utils;
 
 pub fn run() -> Result<(), io::Error> {
     let home_dir = app::home_dir();

@@ -15,7 +15,6 @@ use tui::{
 };
 use tracing;
 use super::op;
-use super::utils;
 use super::terminal;
 use std::convert::TryFrom;
 use std::error;
