@@ -129,6 +129,21 @@ fn new_header_row<'a>(headers: &'a Vec<String>) -> Row<'a> {
         .bottom_margin(1)
 }
 
+fn new_item_list_row<'a, 'b>(item: &'a op::ItemListEntry, headers: &'b Vec<String>) -> Row<'a> {
+    let mut height = 1;
+    let cells = headers.iter().map(|header| {
+        let val = match header.as_str() {
+            "id" => &item.id,
+            "title" => &item.title,
+            "updated_at" => &item.updated_at,
+            _ => "",
+        };
+        height = cmp::max(height, val.chars().filter(|c| *c == '\n').count());
+        Cell::from(Span::raw(val))
+    });
+    Row::new(cells).height(height as u16).bottom_margin(1)
+}
+
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
@@ -137,18 +152,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     if app.app_state == AppState::ItemListView {
         let table_items = app.items.iter().map(|item| {
-            let mut height = 1;
-            let cells = app.headers.iter().map(|header| {
-                let val = match header.as_str() {
-                    "id" => &item.id,
-                    "title" => &item.title,
-                    "updated_at" => &item.updated_at,
-                    _ => "",
-                };
-                height = cmp::max(height, val.chars().filter(|c| *c == '\n').count());
-                Cell::from(Span::raw(val))
-            });
-            Row::new(cells).height(height as u16).bottom_margin(1)
+            new_item_list_row(&item, &app.headers)
         });
         // FIXME: These should be calculated based on size of largest value per column and
         // use `Length` instead
