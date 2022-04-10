@@ -1,4 +1,5 @@
 /// Interface to 1password
+use serde::{Deserialize, Serialize};
 use serde_json::{Value};
 use std::error;
 use std::fs;
@@ -18,6 +19,20 @@ static OP_TOKEN_TTL: u64 = 1800;
 pub struct Session {
     pub name: String,
     pub token: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ItemListEntry {
+    pub id: String,
+    // FIXME: Should be an enum
+    pub category: String,
+    pub last_edited_by: String,
+    pub title: String,
+    // FIXME: should be date-time
+    pub created_at: String,
+    // FIXME: should be date-time
+    pub updated_at: String,
+    pub version: u8,
 }
 
 impl Session {
@@ -67,7 +82,7 @@ impl Session {
     // pub fn auto_refresh_session() {}
 
     // FIXME: instead of using serde_json::Error, use enum that also can be `Box<dyn error::Error>`
-    pub fn list_items(&self) -> Result<Vec<Value>, serde_json::Error> {
+    pub fn list_items(&self) -> Result<Vec<ItemListEntry>, serde_json::Error> {
         let output = Command::new("op")
                              .env(&self.name, &self.token)
                              .arg("item")

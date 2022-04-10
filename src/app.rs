@@ -14,7 +14,6 @@ use tui::{
     Frame, Terminal,
 };
 use tracing;
-use serde_json::{Value};
 use super::op;
 use super::utils;
 use super::terminal;
@@ -30,8 +29,8 @@ enum AppState {
 struct App {
     table_state: TableState,
     app_state: AppState,
-    headers: Vec<Vec<String>>,
-    items: Vec<Value>,
+    headers: Vec<String>,
+    items: Vec<op::ItemListEntry>,
     session: op::Session,
 }
 
@@ -42,8 +41,8 @@ pub fn home_dir() -> String {
 }
 
 impl App {
-    fn new(headers: Vec<Vec<String>>) -> Result<App, Box<dyn error::Error>> {
-        let items: Vec<Value> = Vec::new();
+    fn new(headers: Vec<String>) -> Result<App, Box<dyn error::Error>> {
+        let items: Vec<op::ItemListEntry> = Vec::new();
         let op_token_path = format!("{}/token", home_dir());
         Ok(App {
             table_state: TableState::default(),
@@ -84,7 +83,7 @@ impl App {
         self.table_state.select(Some(i));
     }
 
-    pub fn current_item(&self) -> &Value {
+    pub fn current_item(&self) -> &op::ItemListEntry {
         let i = self.table_state.selected().unwrap_or(0);
         &self.items[i]
     }
@@ -126,11 +125,12 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .split(f.size());
     let selected_style = Style::default().add_modifier(Modifier::REVERSED);
     let normal_style = Style::default().bg(Color::Blue);
+    let header_style = Style::default().fg(Color::Red);
 
     if app.app_state == AppState::ItemListView {
         let header_cells = app.headers
             .iter()
-            .map(|h| Cell::from(Span::raw(h.join("_"))).style(Style::default().fg(Color::Red)));
+            .map(|h| Cell::from(Span::raw(h)).style(header_style));
         let header = Row::new(header_cells)
             .style(normal_style)
             .height(1)
@@ -139,13 +139,13 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let table_items = app.items.iter().map(|item| {
             let mut height = 1;
             let cells = app.headers.iter().map(|header| {
-                let val;
-                if let Some(x) = utils::get_in(item, header) {
-                    val = x.as_str().unwrap();
-                    height = cmp::max(height, val.chars().filter(|c| *c == '\n').count());
-                } else {
-                    val = "";
-                }
+                let val = match header.as_str() {
+                    "id" => &item.id,
+                    "title" => &item.title,
+                    "updated_at" => &item.updated_at,
+                    _ => "",
+                };
+                height = cmp::max(height, val.chars().filter(|c| *c == '\n').count());
                 Cell::from(Span::raw(val))
             });
             Row::new(cells).height(height as u16).bottom_margin(1)
@@ -163,7 +163,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     } else if app.app_state == AppState::ItemView {
         let header_cells = ["field", "value"]
             .iter()
-            .map(|h| Cell::from(Span::raw(h.to_string())).style(Style::default().fg(Color::Red)));
+            .map(|h| Cell::from(Span::raw(h.to_string())).style(header_style));
         let header = Row::new(header_cells)
             .style(normal_style)
             .height(1)
@@ -186,9 +186,9 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 pub fn render_app() -> Result<(), Box<dyn Error>> {
     // To be taken from CLI
     let headers = vec![
-        vec![String::from("id")],
-        vec![String::from("title")],
-        vec![String::from("updated_at")],
+        String::from("id"),
+        String::from("title"),
+        String::from("updated_at"),
     ];
     // create app and run it
     let mut app = App::new(headers)?;
