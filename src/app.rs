@@ -21,14 +21,14 @@ use super::terminal;
 use super::ui;
 
 #[derive(PartialEq)]
-enum AppState {
+enum AppView {
     ItemListView,
     ItemView,
 }
 
 struct App {
     table_state: TableState,
-    app_state: AppState,
+    app_view: AppView,
     headers: Vec<String>,
     items: Vec<op::ItemListEntry>,
     session: op::Session,
@@ -46,7 +46,7 @@ impl App {
         let op_token_path = format!("{}/token", home_dir());
         Ok(App {
             table_state: TableState::default(),
-            app_state: AppState::ItemListView,
+            app_view: AppView::ItemListView,
             headers,
             items,
             session: op::Session::new(op_token_path)?,
@@ -88,8 +88,8 @@ impl App {
         &self.items[i]
     }
 
-    pub fn change_app_state(&mut self, new_app_state: AppState) {
-        self.app_state = new_app_state;
+    pub fn change_app_view(&mut self, new_app_view: AppView) {
+        self.app_view = new_app_view;
     }
 }
 
@@ -99,7 +99,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .margin(1)
         .split(f.size());
 
-    if app.app_state == AppState::ItemListView {
+    if app.app_view == AppView::ItemListView {
         let table_items = app.items.iter().map(|item| {
             ui::new_item_list_row(&item, &app.headers)
         });
@@ -113,7 +113,7 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .widths(&column_widths);
         f.render_stateful_widget(t, rects[0], &mut app.table_state);
-    } else if app.app_state == AppState::ItemView {
+    } else if app.app_view == AppView::ItemView {
         let item_detail_headers = vec![String::from("field"), String::from("value")];
         let item_details = app.session.get_item(&app.current_item().id).unwrap();
         let table_items = item_details.fields
@@ -140,19 +140,19 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
         terminal.draw(|f| ui(f, &mut app))?;
 
         if let Event::Key(key) = event::read()? {
-            if app.app_state == AppState::ItemListView {
+            if app.app_view == AppView::ItemListView {
                 match key.code {
                     KeyCode::Char('q') => return Ok(()),
                     KeyCode::Down      => app.next_item(),
                     KeyCode::Char('j') => app.next_item(),
                     KeyCode::Up        => app.previous_item(),
                     KeyCode::Char('k') => app.previous_item(),
-                    KeyCode::Enter     => app.change_app_state(AppState::ItemView),
+                    KeyCode::Enter     => app.change_app_view(AppView::ItemView),
                     _ => {}
                 }
-            } else if app.app_state == AppState::ItemView {
+            } else if app.app_view == AppView::ItemView {
                 match key.code {
-                    KeyCode::Char('q') => app.change_app_state(AppState::ItemListView),
+                    KeyCode::Char('q') => app.change_app_view(AppView::ItemListView),
                     _ => {}
                 }
             }
