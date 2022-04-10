@@ -18,6 +18,7 @@ use tui::{
 use tracing;
 use super::op;
 use super::terminal;
+use super::ui;
 
 #[derive(PartialEq)]
 enum AppState {
@@ -92,6 +93,48 @@ impl App {
     }
 }
 
+fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+    let rects = Layout::default()
+        .constraints([Constraint::Percentage(100)].as_ref())
+        .margin(1)
+        .split(f.size());
+
+    if app.app_state == AppState::ItemListView {
+        let table_items = app.items.iter().map(|item| {
+            ui::new_item_list_row(&item, &app.headers)
+        });
+        // FIXME: These should be calculated based on size of largest value per column and
+        // use `Length` instead
+        let percentage = u16::try_from(100/app.headers.len()).unwrap();
+        let column_widths = vec![Constraint::Percentage(percentage); app.headers.len()];
+        let t = Table::new(table_items)
+            .header(ui::new_header_row(&app.headers))
+            .block(Block::default().borders(Borders::ALL).title("Table"))
+            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
+            .widths(&column_widths);
+        f.render_stateful_widget(t, rects[0], &mut app.table_state);
+    } else if app.app_state == AppState::ItemView {
+        let item_detail_headers = vec![String::from("field"), String::from("value")];
+        let item_details = app.session.get_item(&app.current_item().id).unwrap();
+        let table_items = item_details.fields
+            .iter()
+            .filter(|field| { field.value.is_some() && field.label.is_some() })
+            .map(|field| {
+                Row::new(vec![
+                    Cell::from(Span::raw(field.label.as_ref().unwrap())),
+                    Cell::from(Span::raw(field.value.as_ref().unwrap()))
+                ])
+            });
+        let column_widths = vec![Constraint::Percentage(50); 2];
+        let t = Table::new(table_items)
+            .header(ui::new_header_row(&item_detail_headers))
+            .block(Block::default().borders(Borders::ALL).title("Entry"))
+            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
+            .widths(&column_widths);
+        f.render_stateful_widget(t, rects[0], &mut app.table_state);
+    }
+}
+
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
         terminal.draw(|f| ui(f, &mut app))?;
@@ -114,74 +157,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                 }
             }
         }
-    }
-}
-
-/// Given a vec of column display names, return a tui Row object
-fn new_header_row<'a>(headers: &'a Vec<String>) -> Row<'a> {
-    let header_cells = headers
-        .iter()
-        .map(|h| Cell::from(Span::raw(h)).style(Style::default().fg(Color::Red)));
-    Row::new(header_cells)
-        .style(Style::default().bg(Color::Blue))
-        .height(1)
-        .bottom_margin(1)
-}
-
-fn new_item_list_row<'a, 'b>(item: &'a op::ItemListEntry, headers: &'b Vec<String>) -> Row<'a> {
-    let mut height = 1;
-    let cells = headers.iter().map(|header| {
-        let val = match header.as_str() {
-            "id" => &item.id,
-            "title" => &item.title,
-            "updated_at" => &item.updated_at,
-            _ => "",
-        };
-        height = cmp::max(height, val.chars().filter(|c| *c == '\n').count());
-        Cell::from(Span::raw(val))
-    });
-    Row::new(cells).height(height as u16).bottom_margin(1)
-}
-
-fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-    let rects = Layout::default()
-        .constraints([Constraint::Percentage(100)].as_ref())
-        .margin(1)
-        .split(f.size());
-
-    if app.app_state == AppState::ItemListView {
-        let table_items = app.items.iter().map(|item| {
-            new_item_list_row(&item, &app.headers)
-        });
-        // FIXME: These should be calculated based on size of largest value per column and
-        // use `Length` instead
-        let percentage = u16::try_from(100/app.headers.len()).unwrap();
-        let column_widths = vec![Constraint::Percentage(percentage); app.headers.len()];
-        let t = Table::new(table_items)
-            .header(new_header_row(&app.headers))
-            .block(Block::default().borders(Borders::ALL).title("Table"))
-            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-            .widths(&column_widths);
-        f.render_stateful_widget(t, rects[0], &mut app.table_state);
-    } else if app.app_state == AppState::ItemView {
-        let item_detail_headers = vec![String::from("field"), String::from("value")];
-        let item_details = app.session.get_item(&app.current_item().id).unwrap();
-        let table_items = item_details.fields
-            .iter()
-            .filter(|field| { field.value.is_some() && field.label.is_some() })
-            .map(|field| {
-                Row::new(vec![
-                    Cell::from(Span::raw(field.label.as_ref().unwrap())),
-                    Cell::from(Span::raw(field.value.as_ref().unwrap()))
-                ])
-            });
-        let column_widths = vec![Constraint::Percentage(50); 2];
-        let t = Table::new(table_items)
-            .header(new_header_row(&item_detail_headers))
-            .block(Block::default().borders(Borders::ALL).title("Entry"))
-            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-            .widths(&column_widths);
-        f.render_stateful_widget(t, rects[0], &mut app.table_state);
     }
 }
 

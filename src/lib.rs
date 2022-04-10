@@ -2,12 +2,12 @@
 use std::io;
 use tracing::{Level};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
-// use tracing_subscriber::fmt::writer::MakeWriterExt;
 
 pub mod app;
-pub mod terminal;
-pub mod op;
 pub mod err;
+pub mod op;
+pub mod terminal;
+pub mod ui;
 
 pub fn run() -> Result<(), io::Error> {
     let home_dir = app::home_dir();
