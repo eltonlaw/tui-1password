@@ -118,24 +118,24 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
     }
 }
 
+/// Given a vec of column display names, return a tui Row object
+fn new_header_row<'a>(headers: &'a Vec<String>) -> Row<'a> {
+    let header_cells = headers
+        .iter()
+        .map(|h| Cell::from(Span::raw(h)).style(Style::default().fg(Color::Red)));
+    Row::new(header_cells)
+        .style(Style::default().bg(Color::Blue))
+        .height(1)
+        .bottom_margin(1)
+}
+
 fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
         .margin(1)
         .split(f.size());
-    let selected_style = Style::default().add_modifier(Modifier::REVERSED);
-    let normal_style = Style::default().bg(Color::Blue);
-    let header_style = Style::default().fg(Color::Red);
 
     if app.app_state == AppState::ItemListView {
-        let header_cells = app.headers
-            .iter()
-            .map(|h| Cell::from(Span::raw(h)).style(header_style));
-        let header = Row::new(header_cells)
-            .style(normal_style)
-            .height(1)
-            .bottom_margin(1);
-
         let table_items = app.items.iter().map(|item| {
             let mut height = 1;
             let cells = app.headers.iter().map(|header| {
@@ -155,19 +155,13 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let percentage = u16::try_from(100/app.headers.len()).unwrap();
         let column_widths = vec![Constraint::Percentage(percentage); app.headers.len()];
         let t = Table::new(table_items)
-            .header(header)
+            .header(new_header_row(&app.headers))
             .block(Block::default().borders(Borders::ALL).title("Table"))
-            .highlight_style(selected_style)
+            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .widths(&column_widths);
         f.render_stateful_widget(t, rects[0], &mut app.table_state);
     } else if app.app_state == AppState::ItemView {
-        let header_cells = ["field", "value"]
-            .iter()
-            .map(|h| Cell::from(Span::raw(h.to_string())).style(header_style));
-        let header = Row::new(header_cells)
-            .style(normal_style)
-            .height(1)
-            .bottom_margin(1);
+        let item_detail_headers = vec![String::from("field"), String::from("value")];
         let item_details = app.session.get_item(&app.current_item().id).unwrap();
         let empty_string = String::from("");
         let table_items = item_details.fields
@@ -183,9 +177,9 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             });
         let column_widths = vec![Constraint::Percentage(50); 2];
         let t = Table::new(table_items)
-            .header(header)
+            .header(new_header_row(&item_detail_headers))
             .block(Block::default().borders(Borders::ALL).title("Entry"))
-            .highlight_style(selected_style)
+            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .widths(&column_widths);
         f.render_stateful_widget(t, rects[0], &mut app.table_state);
     }
