@@ -3,7 +3,9 @@ use crossterm::{
     event::{self, Event, KeyCode},
 };
 use std::cmp;
+use std::convert::TryFrom;
 use std::env;
+use std::error;
 use std::{error::Error, io};
 use tui::{
     backend::{Backend},
@@ -16,8 +18,6 @@ use tui::{
 use tracing;
 use super::op;
 use super::terminal;
-use std::convert::TryFrom;
-use std::error;
 
 #[derive(PartialEq)]
 enum AppState {
@@ -193,15 +193,18 @@ pub fn render_app() -> Result<(), Box<dyn Error>> {
         String::from("updated_at"),
     ];
     // create app and run it
-    let mut app = App::new(headers)?;
-    app.populate_items();
+    match App::new(headers) {
+        Result::Ok(mut app) => {
+            app.populate_items();
 
-    let mut tm = terminal::TerminalModifier::new()?;
-    let res = run_app(&mut tm.terminal, app);
+            let mut tm = terminal::TerminalModifier::new()?;
+            let res = run_app(&mut tm.terminal, app);
 
-    if let Err(err) = res{
-        tracing::error!("{:?}", err);
-    }
-
+            if let Err(err) = res{
+                tracing::error!("{:?}", err);
+            }
+        }
+        Result::Err(err) => eprintln!("{}", err),
+    };
     Ok(())
 }
