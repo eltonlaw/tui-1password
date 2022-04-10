@@ -21,18 +21,51 @@ pub struct Session {
     pub token: String,
 }
 
-#[derive(Serialize, Deserialize)]
+/// Struct representing each element in the json list returned by `op item list`
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ItemListEntry {
     pub id: String,
+    pub title: String,
+    pub version: u8,
     // FIXME: Should be an enum
     pub category: String,
+
+    // FIXME: should be date-time
     pub last_edited_by: String,
-    pub title: String,
-    // FIXME: should be date-time
     pub created_at: String,
-    // FIXME: should be date-time
     pub updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ItemDetailsField {
+    pub id: String,
+    pub r#type: String,
+    pub purpose: Option<String>,
+    pub label: String,
+    pub value: Option<String>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ItemDetailsVault {
+    pub id: String,
+}
+
+/// Struct representing the json map returned by `op item get`
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ItemDetails {
+    pub id: String,
+    pub title: String,
     pub version: u8,
+    // FIXME: Should be an enum
+    pub category: String,
+
+    // FIXME: should be date-time
+    pub last_edited_by: String,
+    pub created_at: String,
+    pub updated_at: String,
+
+    pub vault: ItemDetailsVault,
+    pub fields: Vec<ItemDetailsField>,
 }
 
 impl Session {
@@ -96,7 +129,7 @@ impl Session {
 
     }
 
-    pub fn get_item(&self, item_name: &str) -> Result<Vec<Value>, serde_json::Error> {
+    pub fn get_item(&self, item_name: &String) -> Result<ItemDetails, serde_json::Error> {
         let output = Command::new("op")
                              .env(&self.name, &self.token)
                              .arg("item")

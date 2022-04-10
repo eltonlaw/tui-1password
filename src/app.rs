@@ -168,11 +168,19 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .style(normal_style)
             .height(1)
             .bottom_margin(1);
-        let table_items = vec![
-            Row::new(vec![Cell::from(Span::raw("field1")), Cell::from(Span::raw("value"))]),
-            Row::new(vec![Cell::from(Span::raw("field2")), Cell::from(Span::raw("value"))]),
-            Row::new(vec![Cell::from(Span::raw("field3")), Cell::from(Span::raw("value"))]),
-        ];
+        let item_details = app.session.get_item(&app.current_item().id).unwrap();
+        let empty_string = String::from("");
+        let table_items = item_details.fields
+            .iter()
+            .filter(|field| {
+                field.value.is_some()
+            })
+            .map(|field| {
+                Row::new(vec![
+                    Cell::from(Span::raw(&field.label)),
+                    Cell::from(Span::raw(field.value.as_ref().unwrap_or(&empty_string)))
+                ])
+            });
         let column_widths = vec![Constraint::Percentage(50); 2];
         let t = Table::new(table_items)
             .header(header)
