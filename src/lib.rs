@@ -1,7 +1,12 @@
 /// CLI entry point
+use crossterm::event::{self, Event, KeyCode};
 use std::io;
+use std::error::Error;
 use tracing::{Level};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
+use tui::{
+    backend::{Backend},
+    Terminal};
 
 pub mod app;
 pub mod err;
@@ -9,7 +14,32 @@ pub mod op;
 pub mod terminal;
 pub mod ui;
 
-pub fn run() -> Result<(), io::Error> {
+fn draw_app<B: Backend>(terminal: &mut Terminal<B>, mut app: app::App) -> io::Result<()> {
+    loop {
+        terminal.draw(|f| app::ui(f, &mut app))?;
+
+        if let Event::Key(key) = event::read()? {
+            if app.app_view == app::AppView::ItemListView {
+                match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Down      => app.next_item(),
+                    KeyCode::Char('j') => app.next_item(),
+                    KeyCode::Up        => app.previous_item(),
+                    KeyCode::Char('k') => app.previous_item(),
+                    KeyCode::Enter     => app.change_app_view(app::AppView::ItemView),
+                    _ => {}
+                }
+            } else if app.app_view == app::AppView::ItemView {
+                match key.code {
+                    KeyCode::Char('q') => app.change_app_view(app::AppView::ItemListView),
+                    _ => {}
+                }
+            }
+        }
+    }
+}
+
+pub fn run() -> Result<(), Box<dyn Error>> {
     let home_dir = app::home_dir();
     // FIXME: Delete older files.
     let file_appender = RollingFileAppender::new(Rotation::NEVER, home_dir, "run.log");
@@ -22,21 +52,26 @@ pub fn run() -> Result<(), io::Error> {
         .init();
 
     tracing::info!("Starting new instance tui-1password instance");
-    let _ = app::render_app();
+    // To be taken from CLI
+    let headers = vec![
+        String::from("id"),
+        String::from("title"),
+        String::from("updated_at"),
+    ];
+    // create app and run it
+    match app::App::new(headers) {
+        Result::Ok(mut app) => {
+            app.populate_items();
+
+            let mut tm = terminal::TerminalModifier::new()?;
+
+            // Loop forever, if return, there's an error
+            let res = draw_app(&mut tm.terminal, app);
+            if let Err(err) = res{
+                tracing::error!("{:?}", err);
+            }
+        }
+        Result::Err(err) => eprintln!("{}", err),
+    };
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::{json};
-
-    #[test]
-    fn get_in_test() {
-		let v1 = json!({"a": "b", "c": {"d": "e"}});
-        assert_eq!(None, utils::get_in(&v1, &vec!["e"]));
-        assert_eq!(&json!({"d": "e"}), utils::get_in(&v1, &vec!["c"]).unwrap());
-        assert_eq!("e", utils::get_in(&v1, &vec!["c", "d"]).unwrap());
-    }
-
 }

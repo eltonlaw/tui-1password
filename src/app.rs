@@ -21,17 +21,17 @@ use super::terminal;
 use super::ui;
 
 #[derive(PartialEq)]
-enum AppView {
+pub enum AppView {
     ItemListView,
     ItemView,
 }
 
-struct App {
-    table_state: TableState,
-    app_view: AppView,
-    headers: Vec<String>,
-    items: Vec<op::ItemListEntry>,
-    session: op::Session,
+pub struct App {
+    pub table_state: TableState,
+    pub app_view: AppView,
+    pub headers: Vec<String>,
+    pub items: Vec<op::ItemListEntry>,
+    pub session: op::Session,
 }
 
 /// Get directory where logs and local cache is stored
@@ -41,7 +41,7 @@ pub fn home_dir() -> String {
 }
 
 impl App {
-    fn new(headers: Vec<String>) -> Result<App, Box<dyn error::Error>> {
+    pub fn new(headers: Vec<String>) -> Result<App, Box<dyn error::Error>> {
         let items: Vec<op::ItemListEntry> = Vec::new();
         let op_token_path = format!("{}/token", home_dir());
         Ok(App {
@@ -93,7 +93,7 @@ impl App {
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let rects = Layout::default()
         .constraints([Constraint::Percentage(100)].as_ref())
         .margin(1)
@@ -133,53 +133,4 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .widths(&column_widths);
         f.render_stateful_widget(t, rects[0], &mut app.table_state);
     }
-}
-
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
-    loop {
-        terminal.draw(|f| ui(f, &mut app))?;
-
-        if let Event::Key(key) = event::read()? {
-            if app.app_view == AppView::ItemListView {
-                match key.code {
-                    KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Down      => app.next_item(),
-                    KeyCode::Char('j') => app.next_item(),
-                    KeyCode::Up        => app.previous_item(),
-                    KeyCode::Char('k') => app.previous_item(),
-                    KeyCode::Enter     => app.change_app_view(AppView::ItemView),
-                    _ => {}
-                }
-            } else if app.app_view == AppView::ItemView {
-                match key.code {
-                    KeyCode::Char('q') => app.change_app_view(AppView::ItemListView),
-                    _ => {}
-                }
-            }
-        }
-    }
-}
-
-pub fn render_app() -> Result<(), Box<dyn Error>> {
-    // To be taken from CLI
-    let headers = vec![
-        String::from("id"),
-        String::from("title"),
-        String::from("updated_at"),
-    ];
-    // create app and run it
-    match App::new(headers) {
-        Result::Ok(mut app) => {
-            app.populate_items();
-
-            let mut tm = terminal::TerminalModifier::new()?;
-            let res = run_app(&mut tm.terminal, app);
-
-            if let Err(err) = res{
-                tracing::error!("{:?}", err);
-            }
-        }
-        Result::Err(err) => eprintln!("{}", err),
-    };
-    Ok(())
 }
