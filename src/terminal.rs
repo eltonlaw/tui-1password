@@ -5,7 +5,7 @@ use crossterm::{
 use tracing;
 use std::{error::Error, io};
 use tui::{
-    backend::{Backend, CrosstermBackend},
+    backend::{CrosstermBackend},
     Terminal,
 };
 

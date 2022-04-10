@@ -1,6 +1,6 @@
 /// Interface to 1password
 use serde::{Deserialize, Serialize};
-use serde_json::{Value};
+use serde_json;
 use std::error;
 use std::fs;
 use std::fs::File;
