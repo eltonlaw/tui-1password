@@ -38,10 +38,10 @@ pub struct ItemListEntry {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ItemDetailsField {
-    pub id: String,
-    pub r#type: String,
+    pub id: Option<String>,
+    pub r#type: Option<String>,
     pub purpose: Option<String>,
-    pub label: String,
+    pub label: Option<String>,
     pub value: Option<String>
 }
 

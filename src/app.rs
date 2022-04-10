@@ -167,16 +167,13 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     } else if app.app_state == AppState::ItemView {
         let item_detail_headers = vec![String::from("field"), String::from("value")];
         let item_details = app.session.get_item(&app.current_item().id).unwrap();
-        let empty_string = String::from("");
         let table_items = item_details.fields
             .iter()
-            .filter(|field| {
-                field.value.is_some()
-            })
+            .filter(|field| { field.value.is_some() && field.label.is_some() })
             .map(|field| {
                 Row::new(vec![
-                    Cell::from(Span::raw(&field.label)),
-                    Cell::from(Span::raw(field.value.as_ref().unwrap_or(&empty_string)))
+                    Cell::from(Span::raw(field.label.as_ref().unwrap())),
+                    Cell::from(Span::raw(field.value.as_ref().unwrap()))
                 ])
             });
         let column_widths = vec![Constraint::Percentage(50); 2];
