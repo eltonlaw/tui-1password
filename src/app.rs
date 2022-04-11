@@ -9,7 +9,7 @@ use tui::{
     layout::{Constraint, Layout},
     style::{Modifier, Style},
     text::Span,
-    widgets::{Block, Borders, Cell, Row, Table, TableState},
+    widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState},
     Frame,
 };
 use super::app_config::{AppConfig};
@@ -57,7 +57,7 @@ impl App {
             items,
             session: op::Session::new(config.token_path)?,
             input_mode: InputMode::Normal,
-            cmd_input: String::from(""),
+            cmd_input: String::from(":"),
         })
     }
     pub fn populate_items(&mut self) {
@@ -96,7 +96,20 @@ impl App {
         &self.items[i]
     }
 
-    /// Currently only handles KeyEvents
+    fn reset_cmd_input(&mut self) {
+        self.input_mode = InputMode::Normal;
+        self.cmd_input = String::from(":");
+    }
+
+    fn run_command(&mut self) {
+        match self.cmd_input.as_str() {
+            ":q" => self.app_view = AppView::Exit,
+            ":qa" => self.app_view = AppView::Exit,
+            _ => {}
+        }
+    }
+
+    /// Currently only handles KeyEvents, modifies app state based on inputs
     pub fn handle_event(&mut self, event: Event) {
         match event {
             Event::Key(key_event) => match self.input_mode {
@@ -107,9 +120,7 @@ impl App {
                         KeyCode::Char('j') => self.next_item(),
                         KeyCode::Up        => self.previous_item(),
                         KeyCode::Char('k') => self.previous_item(),
-                        KeyCode::Char(':') => {
-                            self.input_mode = InputMode::Command
-                        },
+                        KeyCode::Char(':') => self.input_mode = InputMode::Command,
                         KeyCode::Enter     => self.app_view = AppView::ItemView,
                         _ => {}
                     },
@@ -120,10 +131,10 @@ impl App {
                     AppView::Exit => {},
                 },
                 InputMode::Command => match key_event.code {
-                    // KeyCode::Enter => {},
+                    KeyCode::Enter => { self.run_command(); self.reset_cmd_input(); },
                     KeyCode::Char(c) => self.cmd_input.push(c),
                     KeyCode::Backspace => { self.cmd_input.pop(); },
-                    KeyCode::Esc => self.input_mode = InputMode::Normal,
+                    KeyCode::Esc => self.reset_cmd_input(),
                     _ => {},
                 }
             },
@@ -135,9 +146,9 @@ impl App {
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let constraints = match app.input_mode {
         InputMode::Normal => vec![Constraint::Percentage(100)],
-        InputMode::Command => vec![Constraint::Percentage(90), Constraint::Percentage(10)],
+        InputMode::Command => vec![Constraint::Min(1), Constraint::Length(1)],
     };
-    let rects = Layout::default()
+    let chunks = Layout::default()
         .constraints(constraints)
         .margin(1)
         .split(f.size());
@@ -155,7 +166,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .block(Block::default().borders(Borders::NONE).title("Table"))
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .widths(&column_widths);
-        f.render_stateful_widget(t, rects[0], &mut app.table_state);
+        f.render_stateful_widget(t, chunks[0], &mut app.table_state);
     } else if app.app_view == AppView::ItemView {
         let item_detail_headers = vec![String::from("field"), String::from("value")];
         let item_details = app.session.get_item(&app.current_item().id).unwrap();
@@ -174,6 +185,10 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .block(Block::default().borders(Borders::NONE).title("Entry"))
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .widths(&column_widths);
-        f.render_stateful_widget(t, rects[0], &mut app.table_state);
+        f.render_stateful_widget(t, chunks[0], &mut app.table_state);
+    }
+    if app.input_mode == InputMode::Command {
+        let input = Paragraph::new(app.cmd_input.as_ref());
+        f.render_widget(input, chunks[1]);
     }
 }
