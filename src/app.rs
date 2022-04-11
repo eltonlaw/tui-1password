@@ -16,11 +16,25 @@ use super::app_config::{AppConfig};
 use super::op;
 use super::ui;
 
+/// Different available views that the app can display API data
+///
+/// - ItemListView: for looking through the list of stored data
+/// - ItemView: display all details of specific item
+/// - Exit: When entered, stops the app
 #[derive(PartialEq)]
 pub enum AppView {
     ItemListView,
     ItemView,
     Exit,
+}
+
+/// Normal mode is regular operation, command is when `:` is typed
+#[derive(PartialEq)]
+pub enum InputMode {
+    Normal,
+    Command,
+    // FIXME:
+    // Edit,
 }
 
 pub struct App {
@@ -29,6 +43,8 @@ pub struct App {
     pub headers: Vec<String>,
     pub items: Vec<op::ItemListEntry>,
     pub session: op::Session,
+    pub input_mode: InputMode,
+    pub cmd_input: String,
 }
 
 impl App {
@@ -40,6 +56,8 @@ impl App {
             headers: config.headers,
             items,
             session: op::Session::new(config.token_path)?,
+            input_mode: InputMode::Normal,
+            cmd_input: String::from(""),
         })
     }
     pub fn populate_items(&mut self) {
@@ -78,36 +96,49 @@ impl App {
         &self.items[i]
     }
 
-    pub fn change_app_view(&mut self, new_app_view: AppView) {
-        self.app_view = new_app_view;
-    }
-
     /// Currently only handles KeyEvents
     pub fn handle_event(&mut self, event: Event) {
-        if let Event::Key(key_event) = event {
-            if self.app_view == AppView::ItemListView {
-                match key_event.code {
-                    KeyCode::Char('q') => self.change_app_view(AppView::Exit),
-                    KeyCode::Down      => self.next_item(),
-                    KeyCode::Char('j') => self.next_item(),
-                    KeyCode::Up        => self.previous_item(),
-                    KeyCode::Char('k') => self.previous_item(),
-                    KeyCode::Enter     => self.change_app_view(AppView::ItemView),
-                    _ => {}
+        match event {
+            Event::Key(key_event) => match self.input_mode {
+                InputMode::Normal => match self.app_view {
+                    AppView::ItemListView => match key_event.code {
+                        KeyCode::Char('q') => self.app_view = AppView::Exit,
+                        KeyCode::Down      => self.next_item(),
+                        KeyCode::Char('j') => self.next_item(),
+                        KeyCode::Up        => self.previous_item(),
+                        KeyCode::Char('k') => self.previous_item(),
+                        KeyCode::Char(':') => {
+                            self.input_mode = InputMode::Command
+                        },
+                        KeyCode::Enter     => self.app_view = AppView::ItemView,
+                        _ => {}
+                    },
+                    AppView::ItemView => match key_event.code {
+                        KeyCode::Char('q') => self.app_view = AppView::ItemListView,
+                        _ => {}
+                    },
+                    AppView::Exit => {},
+                },
+                InputMode::Command => match key_event.code {
+                    // KeyCode::Enter => {},
+                    KeyCode::Char(c) => self.cmd_input.push(c),
+                    KeyCode::Backspace => { self.cmd_input.pop(); },
+                    KeyCode::Esc => self.input_mode = InputMode::Normal,
+                    _ => {},
                 }
-            } else if self.app_view == AppView::ItemView {
-                match key_event.code {
-                    KeyCode::Char('q') => self.change_app_view(AppView::ItemListView),
-                    _ => {}
-                }
-            }
+            },
+            _ => {}
         }
     }
 }
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+    let constraints = match app.input_mode {
+        InputMode::Normal => vec![Constraint::Percentage(100)],
+        InputMode::Command => vec![Constraint::Percentage(90), Constraint::Percentage(10)],
+    };
     let rects = Layout::default()
-        .constraints([Constraint::Percentage(100)].as_ref())
+        .constraints(constraints)
         .margin(1)
         .split(f.size());
 
@@ -121,7 +152,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let column_widths = vec![Constraint::Percentage(percentage); app.headers.len()];
         let t = Table::new(table_items)
             .header(ui::new_header_row(&app.headers))
-            .block(Block::default().borders(Borders::ALL).title("Table"))
+            .block(Block::default().borders(Borders::NONE).title("Table"))
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .widths(&column_widths);
         f.render_stateful_widget(t, rects[0], &mut app.table_state);
@@ -140,7 +171,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let column_widths = vec![Constraint::Percentage(50); 2];
         let t = Table::new(table_items)
             .header(ui::new_header_row(&item_detail_headers))
-            .block(Block::default().borders(Borders::ALL).title("Entry"))
+            .block(Block::default().borders(Borders::NONE).title("Entry"))
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .widths(&column_widths);
         f.render_stateful_widget(t, rects[0], &mut app.table_state);
