@@ -77,6 +77,11 @@ impl App {
         self.table_state.select(Some(i));
     }
 
+    // FIXME: Sort by sort key
+    pub fn sort_items(&mut self) {
+        self.items.sort_by(|a, b| a.title.cmp(&b.title));
+    }
+
     pub fn previous_item(&mut self) {
         let i = match self.table_state.selected() {
             Some(i) => {
@@ -154,9 +159,12 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .split(f.size());
 
     if app.app_view == AppView::ItemListView {
-        let table_items = app.items.iter().map(|item| {
-            ui::new_item_list_row(&item, &app.headers)
-        });
+        app.sort_items();
+        let table_items = app.items
+            .iter()
+            .map(|item| {
+                ui::new_item_list_row(&item, &app.headers)
+            });
         // FIXME: These should be calculated based on size of largest value per column and
         // use `Length` instead
         let percentage = u16::try_from(100/app.headers.len()).unwrap();
