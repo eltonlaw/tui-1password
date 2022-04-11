@@ -18,23 +18,9 @@ fn draw_app<B: Backend>(terminal: &mut Terminal<B>, mut app: app::App) -> io::Re
     loop {
         terminal.draw(|f| app::ui(f, &mut app))?;
 
-        if let Event::Key(key) = event::read()? {
-            if app.app_view == app::AppView::ItemListView {
-                match key.code {
-                    KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Down      => app.next_item(),
-                    KeyCode::Char('j') => app.next_item(),
-                    KeyCode::Up        => app.previous_item(),
-                    KeyCode::Char('k') => app.previous_item(),
-                    KeyCode::Enter     => app.change_app_view(app::AppView::ItemView),
-                    _ => {}
-                }
-            } else if app.app_view == app::AppView::ItemView {
-                match key.code {
-                    KeyCode::Char('q') => app.change_app_view(app::AppView::ItemListView),
-                    _ => {}
-                }
-            }
+        app.handle_event(event::read()?);
+        if app.app_view == app::AppView::Exit {
+            return Ok(());
         }
     }
 }

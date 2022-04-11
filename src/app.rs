@@ -24,6 +24,7 @@ use super::ui;
 pub enum AppView {
     ItemListView,
     ItemView,
+    Exit,
 }
 
 pub struct App {
@@ -90,6 +91,27 @@ impl App {
 
     pub fn change_app_view(&mut self, new_app_view: AppView) {
         self.app_view = new_app_view;
+    }
+
+    pub fn handle_event(&mut self, event: Event) {
+        if let Event::Key(key_event) = event {
+            if self.app_view == AppView::ItemListView {
+                match key_event.code {
+                    KeyCode::Char('q') => self.change_app_view(AppView::Exit),
+                    KeyCode::Down      => self.next_item(),
+                    KeyCode::Char('j') => self.next_item(),
+                    KeyCode::Up        => self.previous_item(),
+                    KeyCode::Char('k') => self.previous_item(),
+                    KeyCode::Enter     => self.change_app_view(AppView::ItemView),
+                    _ => {}
+                }
+            } else if self.app_view == AppView::ItemView {
+                match key_event.code {
+                    KeyCode::Char('q') => self.change_app_view(AppView::ItemListView),
+                    _ => {}
+                }
+            }
+        }
     }
 }
 
