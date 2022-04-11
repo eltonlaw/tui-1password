@@ -1,24 +1,11 @@
 /// Namespace for creating rust-tui components
-use crossterm::{
-    event::{self, Event, KeyCode},
-};
 use std::cmp;
-use std::convert::TryFrom;
-use std::env;
-use std::error;
-use std::{error::Error, io};
 use tui::{
-    backend::{Backend},
-    layout::{Constraint, Layout},
-    style::{Color, Modifier, Style},
+    style::{Color,Style},
     text::Span,
-    widgets::{Block, Borders, Cell, Row, Table, TableState},
-    Frame, Terminal,
+    widgets::{Cell, Row},
 };
-use tracing;
 use super::op;
-use super::terminal;
-use super::ui;
 
 /// Given a vec of column display names, return a tui Row object
 pub fn new_header_row<'a>(headers: &'a Vec<String>) -> Row<'a> {

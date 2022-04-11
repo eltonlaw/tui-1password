@@ -1,5 +1,5 @@
 /// CLI entry point
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event;
 use std::io;
 use std::error::Error;
 use tracing::{Level};

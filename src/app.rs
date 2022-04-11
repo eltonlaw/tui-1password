@@ -1,23 +1,19 @@
 /// Render data with TUI
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{Event, KeyCode},
 };
-use std::cmp;
 use std::convert::TryFrom;
 use std::error;
-use std::{error::Error, io};
 use tui::{
     backend::{Backend},
     layout::{Constraint, Layout},
-    style::{Color, Modifier, Style},
+    style::{Modifier, Style},
     text::Span,
     widgets::{Block, Borders, Cell, Row, Table, TableState},
-    Frame, Terminal,
+    Frame,
 };
-use tracing;
 use super::app_config::{AppConfig};
 use super::op;
-use super::terminal;
 use super::ui;
 
 #[derive(PartialEq)]
