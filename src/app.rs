@@ -4,7 +4,6 @@ use crossterm::{
 };
 use std::cmp;
 use std::convert::TryFrom;
-use std::env;
 use std::error;
 use std::{error::Error, io};
 use tui::{
@@ -16,6 +15,7 @@ use tui::{
     Frame, Terminal,
 };
 use tracing;
+use super::app_config::{AppConfig};
 use super::op;
 use super::terminal;
 use super::ui;
@@ -35,22 +35,15 @@ pub struct App {
     pub session: op::Session,
 }
 
-/// Get directory where logs and local cache is stored
-pub fn home_dir() -> String {
-    // FIXME: Make sure this exists
-    format!("{}/.tui-1password", env::var("HOME").unwrap())
-}
-
 impl App {
-    pub fn new(headers: Vec<String>) -> Result<App, Box<dyn error::Error>> {
+    pub fn new(config: AppConfig) -> Result<App, Box<dyn error::Error>> {
         let items: Vec<op::ItemListEntry> = Vec::new();
-        let op_token_path = format!("{}/token", home_dir());
         Ok(App {
             table_state: TableState::default(),
             app_view: AppView::ItemListView,
-            headers,
+            headers: config.headers,
             items,
-            session: op::Session::new(op_token_path)?,
+            session: op::Session::new(config.token_path)?,
         })
     }
     pub fn populate_items(&mut self) {
@@ -93,6 +86,7 @@ impl App {
         self.app_view = new_app_view;
     }
 
+    /// Currently only handles KeyEvents
     pub fn handle_event(&mut self, event: Event) {
         if let Event::Key(key_event) = event {
             if self.app_view == AppView::ItemListView {
