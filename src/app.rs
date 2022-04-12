@@ -47,6 +47,31 @@ pub struct App {
     pub cmd_input: String,
 }
 
+pub fn try_inc(idx: Option<usize>, max: usize) -> usize {
+    match idx {
+        Some(i) => {
+            if i >= max - 1 {
+                0
+            } else {
+                i + 1
+            }
+        }
+        None => 0,
+    }
+}
+
+pub fn try_dec(idx: Option<usize>, max: usize) -> usize {
+    match idx {
+        Some(i) => {
+            match i {
+                0 => max - 1,
+                _ => i - 1,
+            }
+        }
+        None => 0,
+    }
+}
+
 impl App {
     pub fn new(config: AppConfig) -> Result<App, Box<dyn error::Error>> {
         let items: Vec<op::ItemListEntry> = Vec::new();
@@ -63,36 +88,19 @@ impl App {
     pub fn populate_items(&mut self) {
         self.items = self.session.list_items().unwrap();
     }
-    pub fn next_item(&mut self) {
-        let i = match self.table_state.selected() {
-            Some(i) => {
-                if i >= self.items.len() - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => 0,
-        };
-        self.table_state.select(Some(i));
-    }
 
     // FIXME: Sort by sort key
     pub fn sort_items(&mut self) {
         self.items.sort_by(|a, b| a.title.cmp(&b.title));
     }
 
+    pub fn next_item(&mut self) {
+        let i = try_inc(self.table_state.selected(), self.items.len());
+        self.table_state.select(Some(i));
+    }
+
     pub fn previous_item(&mut self) {
-        let i = match self.table_state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.items.len() - 1
-                } else {
-                    i - 1
-                }
-            }
-            None => 0,
-        };
+        let i = try_dec(self.table_state.selected(), self.items.len());
         self.table_state.select(Some(i));
     }
 
