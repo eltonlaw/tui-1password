@@ -15,11 +15,6 @@ pub mod op;
 pub mod terminal;
 pub mod ui;
 
-fn setup_tracing(config: &app_config::AppConfig) {
-    // FIXME: Add contents back in, for some reason it doesn't acknowledge
-    // and doesn't do any tracing when run from here
-}
-
 fn draw_app<B: Backend>(terminal: &mut Terminal<B>, mut app: app::App) -> io::Result<()> {
     loop {
         terminal.draw(|f| app::ui(f, &mut app))?;
@@ -34,9 +29,6 @@ fn draw_app<B: Backend>(terminal: &mut Terminal<B>, mut app: app::App) -> io::Re
 pub fn run() -> Result<(), Box<dyn Error>> {
     // To be updated with CLI/config file
     let config = app_config::AppConfig::new();
-    if config.is_debug {
-        setup_tracing(&config);
-    }
 
     // FIXME: COPIED FROM setup_tracing, start:
     let file_appender = RollingFileAppender::new(Rotation::NEVER, &config.home_dir, "run.log");

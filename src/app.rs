@@ -138,16 +138,22 @@ impl App {
 
     fn run_command(&mut self) {
         let components: Vec<&str> = self.cmd_input.split(" ").collect();
-        match components[0] {
+        let n_args = components.len();
+        // From https://github.com/rust-lang/rust/issues/59159 immutable references
+        // have to all be finished with by the time the mutable reference is used
+        let arg0 = String::from(*components.get(0).unwrap_or(&""));
+        let arg1 = String::from(*components.get(1).unwrap_or(&""));
+        let arg2 = String::from(*components.get(2).unwrap_or(&""));
+        match arg0.as_str() {
             ":q" => self.app_view = AppView::Exit,
             ":qa" => self.app_view = AppView::Exit,
             ":sort" => {
                 self.sort_item_list_by(
-                    String::from(components[1]),
-                    if components.len() == 2 {
+                    arg1,
+                    if n_args == 2 {
                         SortDirection::Ascending
                     } else {
-                        match components[2] {
+                        match arg2.as_str() {
                             "asc" => SortDirection::Ascending,
                             "desc" => SortDirection::Descending,
                             &_ => SortDirection::Ascending,
