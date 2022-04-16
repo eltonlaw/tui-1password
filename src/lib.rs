@@ -54,6 +54,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     match app::App::new(config) {
         Result::Ok(mut app) => {
             app.populate_items();
+            app.sort_item_list_by(String::from("title"), app::SortDirection::Ascending);
 
             let mut tm = terminal::TerminalModifier::new()?;
             // Loop forever, if return, there's an error

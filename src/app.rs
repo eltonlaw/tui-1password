@@ -37,6 +37,12 @@ pub enum InputMode {
     // Edit,
 }
 
+#[derive(PartialEq)]
+pub enum SortDirection {
+    Ascending,
+    Descending,
+}
+
 pub struct App {
     pub table_state: TableState,
     pub app_view: AppView,
@@ -90,8 +96,24 @@ impl App {
     }
 
     // FIXME: Sort by sort key
-    pub fn sort_items(&mut self) {
-        self.items.sort_by(|a, b| a.title.cmp(&b.title));
+    pub fn sort_item_list_by(&mut self, header: String, sd: SortDirection) {
+        self.items.sort_by(
+            match header.as_str() {
+                "id"         => match sd {
+                    SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.id.cmp(&b.id),
+                    SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.id.cmp(&a.id),
+                },
+                "title"      => match sd {
+                    SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.title.cmp(&b.title),
+                    SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.title.cmp(&a.title),
+                },
+                "updated_at" => match sd {
+                    SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.updated_at.cmp(&b.updated_at),
+                    SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.updated_at.cmp(&a.updated_at),
+                },
+                &_           => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.title.cmp(&b.title),
+            }
+        );
     }
 
     pub fn next_item(&mut self) {
@@ -115,9 +137,24 @@ impl App {
     }
 
     fn run_command(&mut self) {
-        match self.cmd_input.as_str() {
+        let components: Vec<&str> = self.cmd_input.split(" ").collect();
+        match components[0] {
             ":q" => self.app_view = AppView::Exit,
             ":qa" => self.app_view = AppView::Exit,
+            ":sort" => {
+                self.sort_item_list_by(
+                    String::from(components[1]),
+                    if components.len() == 2 {
+                        SortDirection::Ascending
+                    } else {
+                        match components[2] {
+                            "asc" => SortDirection::Ascending,
+                            "desc" => SortDirection::Descending,
+                            &_ => SortDirection::Ascending,
+                        }
+                    },
+                )
+            },
             _ => {}
         }
     }
@@ -167,7 +204,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .split(f.size());
 
     if app.app_view == AppView::ItemListView {
-        app.sort_items();
         let table_items = app.items
             .iter()
             .map(|item| {
