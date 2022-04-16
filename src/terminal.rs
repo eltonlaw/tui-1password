@@ -1,5 +1,4 @@
 use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture},
     execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use tracing;
@@ -18,7 +17,11 @@ impl TerminalModifier {
         enable_raw_mode()?;
         tracing::info!("Enabled terminal raw mode");
         let mut stdout = io::stdout();
-        execute!(stdout, EnterAlternateScreen, EnableMouseCapture).unwrap();
+        execute!(
+            stdout,
+            EnterAlternateScreen,
+            // EnableMouseCapture
+        ).unwrap();
         let backend = CrosstermBackend::new(stdout);
         let terminal = Terminal::new(backend).unwrap();
         Ok(TerminalModifier {terminal})
@@ -32,7 +35,7 @@ impl Drop for TerminalModifier {
         execute!(
             self.terminal.backend_mut(),
             LeaveAlternateScreen,
-            DisableMouseCapture
+            // DisableMouseCapture
         ).unwrap();
         self.terminal.show_cursor().unwrap();
     }
