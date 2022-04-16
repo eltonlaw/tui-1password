@@ -16,15 +16,8 @@ pub mod terminal;
 pub mod ui;
 
 fn setup_tracing(config: &app_config::AppConfig) {
-    // FIXME: Delete older files.
-    let file_appender = RollingFileAppender::new(Rotation::NEVER, &config.home_dir, "run.log");
-    // Starts a new thread that writes to a file
-    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
-    tracing_subscriber::fmt()
-        .with_writer(non_blocking)
-        .with_ansi(false)
-        .with_max_level(Level::TRACE)
-        .init();
+    // FIXME: Add contents back in, for some reason it doesn't acknowledge
+    // and doesn't do any tracing when run from here
 }
 
 fn draw_app<B: Backend>(terminal: &mut Terminal<B>, mut app: app::App) -> io::Result<()> {
@@ -44,6 +37,18 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     if config.is_debug {
         setup_tracing(&config);
     }
+
+    // FIXME: COPIED FROM setup_tracing, start:
+    let file_appender = RollingFileAppender::new(Rotation::NEVER, &config.home_dir, "run.log");
+    // Starts a new thread that writes to a file
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+    tracing_subscriber::fmt()
+        .with_writer(non_blocking)
+        .with_ansi(false)
+        .with_max_level(Level::TRACE)
+        .init();
+    // FIXME: setup_tracing END
+
     tracing::info!("Starting new instance tui-1password instance with config: {:?}", config);
     // create app and run it
     match app::App::new(config) {
