@@ -14,3 +14,4 @@ tracing-core = "0.1.21"
 tracing-appender = "0.2.0"
 tracing-subscriber = "0.3.8"
 tui = { version = "0.16", features = ["crossterm"] }
+fastrand = "1.4"

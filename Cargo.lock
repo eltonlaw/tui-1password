@@ -100,6 +100,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fastrand"
+version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3fcf0cee53519c866c09b5de1f6c56ff9d647101f81c1964fa632e148896cdf"
+dependencies = [
+ "instant",
+]
+
+[[package]]
 name = "instant"
 version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -482,6 +491,7 @@ name = "tui-1password"
 version = "0.1.0"
 dependencies = [
  "crossterm 0.22.1",
+ "fastrand",
  "serde",
  "serde_json",
  "tracing",
