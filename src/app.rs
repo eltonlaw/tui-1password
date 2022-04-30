@@ -21,7 +21,7 @@ use super::ui;
 /// - ItemListView: for looking through the list of stored data
 /// - ItemView: display all details of specific item
 /// - Exit: When entered, stops the app
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AppView {
     ItemListView,
     ItemView,
@@ -44,10 +44,12 @@ pub enum SortDirection {
 }
 
 pub struct App {
-    pub table_state: TableState,
+    pub item_table_state: TableState,
+    pub item_list_table_state: TableState,
     pub app_view: AppView,
     pub headers: Vec<String>,
     pub items: Vec<op::ItemListEntry>,
+    pub item_details: Option<op::ItemDetails>,
     pub session: op::Session,
     pub input_mode: InputMode,
     pub cmd_input: String,
@@ -80,12 +82,13 @@ pub fn try_dec(idx: Option<usize>, max: usize) -> usize {
 
 impl App {
     pub fn new(config: AppConfig) -> Result<App, Box<dyn error::Error>> {
-        let items: Vec<op::ItemListEntry> = Vec::new();
         Ok(App {
-            table_state: TableState::default(),
+            item_table_state: TableState::default(),
+            item_list_table_state: TableState::default(),
             app_view: AppView::ItemListView,
             headers: config.headers,
-            items,
+            items: Vec::new(),
+            item_details: None,
             session: op::Session::new(config.token_path)?,
             input_mode: InputMode::Normal,
             cmd_input: String::from(":"),
@@ -116,18 +119,42 @@ impl App {
         );
     }
 
-    pub fn next_item(&mut self) {
-        let i = try_inc(self.table_state.selected(), self.items.len());
-        self.table_state.select(Some(i));
+    pub fn next_item(&mut self, app_view: AppView) {
+        match app_view {
+            AppView::ItemListView => {
+                let i = try_inc(self.item_list_table_state.selected(), self.items.len());
+                self.item_list_table_state.select(Some(i));
+            },
+            AppView::ItemView => {
+                let i = try_inc(
+                    self.item_table_state.selected(),
+                    self.item_details.as_ref().unwrap().fields.len()
+                );
+                self.item_table_state.select(Some(i));
+            },
+            _ => {}
+        }
     }
 
-    pub fn previous_item(&mut self) {
-        let i = try_dec(self.table_state.selected(), self.items.len());
-        self.table_state.select(Some(i));
+    pub fn previous_item(&mut self, app_view: AppView) {
+        match app_view {
+            AppView::ItemListView => {
+                let i = try_dec(self.item_list_table_state.selected(), self.items.len());
+                self.item_list_table_state.select(Some(i));
+            },
+            AppView::ItemView => {
+                let i = try_dec(
+                    self.item_table_state.selected(),
+                    self.item_details.as_ref().unwrap().fields.len()
+                );
+                self.item_table_state.select(Some(i));
+            },
+            _ => {}
+        }
     }
 
     pub fn current_item(&self) -> &op::ItemListEntry {
-        let i = self.table_state.selected().unwrap_or(0);
+        let i = self.item_list_table_state.selected().unwrap_or(0);
         &self.items[i]
     }
 
@@ -165,6 +192,10 @@ impl App {
         }
     }
 
+    fn populate_item_details(&mut self) {
+        self.item_details = Some(self.session.get_item(&self.current_item().id).unwrap());
+    }
+
     /// Currently only handles KeyEvents, modifies app state based on inputs
     pub fn handle_event(&mut self, event: Event) {
         match event {
@@ -172,15 +203,22 @@ impl App {
                 InputMode::Normal => match self.app_view {
                     AppView::ItemListView => match key_event.code {
                         KeyCode::Char('q') => self.app_view = AppView::Exit,
-                        KeyCode::Down      => self.next_item(),
-                        KeyCode::Char('j') => self.next_item(),
-                        KeyCode::Up        => self.previous_item(),
-                        KeyCode::Char('k') => self.previous_item(),
+                        KeyCode::Down      => self.next_item(AppView::ItemListView),
+                        KeyCode::Char('j') => self.next_item(AppView::ItemListView),
+                        KeyCode::Up        => self.previous_item(AppView::ItemListView),
+                        KeyCode::Char('k') => self.previous_item(AppView::ItemListView),
                         KeyCode::Char(':') => self.input_mode = InputMode::Command,
-                        KeyCode::Enter     => self.app_view = AppView::ItemView,
+                        KeyCode::Enter     => {
+                            self.populate_item_details();
+                            self.app_view = AppView::ItemView;
+                        },
                         _ => {}
                     },
                     AppView::ItemView => match key_event.code {
+                        KeyCode::Down      => self.next_item(AppView::ItemView),
+                        KeyCode::Char('j') => self.next_item(AppView::ItemView),
+                        KeyCode::Up        => self.previous_item(AppView::ItemView),
+                        KeyCode::Char('k') => self.previous_item(AppView::ItemView),
                         KeyCode::Char('q') => self.app_view = AppView::ItemListView,
                         _ => {}
                     },
@@ -224,11 +262,10 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .block(Block::default().borders(Borders::NONE).title("Table"))
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .widths(&column_widths);
-        f.render_stateful_widget(t, chunks[0], &mut app.table_state);
+        f.render_stateful_widget(t, chunks[0], &mut app.item_list_table_state);
     } else if app.app_view == AppView::ItemView {
         let item_detail_headers = vec![String::from("field"), String::from("value")];
-        let item_details = app.session.get_item(&app.current_item().id).unwrap();
-        let table_items = item_details.fields
+        let table_items = app.item_details.as_ref().unwrap().fields
             .iter()
             .filter(|field| { field.value.is_some() && field.label.is_some() })
             .map(|field| {
@@ -243,7 +280,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .block(Block::default().borders(Borders::NONE).title("Entry"))
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
             .widths(&column_widths);
-        f.render_stateful_widget(t, chunks[0], &mut app.table_state);
+        f.render_stateful_widget(t, chunks[0], &mut app.item_table_state);
     }
     if app.input_mode == InputMode::Command {
         let input = Paragraph::new(app.cmd_input.as_ref());
