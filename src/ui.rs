@@ -18,6 +18,28 @@ pub fn new_header_row<'a>(headers: &'a Vec<String>) -> Row<'a> {
         .bottom_margin(1)
 }
 
+#[allow(dead_code)]
+fn scramble_string(s_old: &String) -> String {
+    let mut s_new = String::with_capacity(s_old.len());
+    for c_old in s_old.as_str().chars() {
+        s_new.push({
+            let charset = match c_old {
+                'a' | 'e' | 'i' | 'o' | 'u' => "aeiou",
+                'A' | 'E' | 'I' | 'O' | 'U' => "AEIOU",
+                'a'..='z' => "abcdefghijklmnopqrstuvwxyz",
+                'A'..='Z' => "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                '0'..='9' => "0123456789",
+                _ => "?",
+            };
+            let chars: Vec<char> = charset.chars().collect();
+            unsafe {
+                *chars.get_unchecked(fastrand::usize(0..chars.len()))
+            }
+        });
+    };
+    s_new
+}
+
 pub fn new_item_list_row<'a, 'b>(item: &'a op::ItemListEntry, headers: &'b Vec<String>) -> Row<'a> {
     let mut height = 1;
     let cells = headers.iter().map(|header| {
