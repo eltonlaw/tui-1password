@@ -36,7 +36,7 @@ pub struct ItemListEntry {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemDetailsField {
     pub id: Option<String>,
     pub r#type: Option<String>,
@@ -45,13 +45,13 @@ pub struct ItemDetailsField {
     pub value: Option<String>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemDetailsVault {
     pub id: String,
 }
 
 /// Struct representing the json map returned by `op item get`
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemDetails {
     pub id: String,
     pub title: String,

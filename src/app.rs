@@ -3,13 +3,14 @@ use crossterm::{
     event::{Event, KeyCode},
 };
 use std::convert::TryFrom;
+use std::io::Write;
+use std::process::{Command, Stdio};
 use std::error;
 use tui::{
     backend::{Backend},
     layout::{Constraint, Layout},
     style::{Modifier, Style},
-    text::Span,
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState},
+    text::Span, widgets::{Block, Borders, Cell, Paragraph, Row, Table, TableState},
     Frame,
 };
 use super::app_config::{AppConfig};
@@ -53,6 +54,7 @@ pub struct App {
     pub session: op::Session,
     pub input_mode: InputMode,
     pub cmd_input: String,
+    pub clipboard_bin: String,
 }
 
 pub fn try_inc(idx: Option<usize>, max: usize) -> usize {
@@ -92,6 +94,7 @@ impl App {
             session: op::Session::new(config.token_path)?,
             input_mode: InputMode::Normal,
             cmd_input: String::from(":"),
+            clipboard_bin: String::from("wl-copy"),
         })
     }
     pub fn populate_items(&mut self) {
@@ -158,6 +161,11 @@ impl App {
         &self.items[i]
     }
 
+    pub fn current_item_detail(&self) -> &op::ItemDetailsField {
+        let i = self.item_table_state.selected().unwrap_or(0);
+        &self.item_details.as_ref().unwrap().fields[i]
+    }
+
     fn reset_cmd_input(&mut self) {
         self.input_mode = InputMode::Normal;
         self.cmd_input = String::from(":");
@@ -192,6 +200,27 @@ impl App {
         }
     }
 
+    fn yank(&self) {
+        let s = match self.app_view {
+            AppView::ItemListView => self.current_item().title.as_str(),
+            AppView::ItemView => {
+                self.current_item_detail().value.as_ref().unwrap().as_str()
+            },
+            _ => { "" },
+        };
+        let process = match Command::new(self.clipboard_bin.as_str())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn() {
+            Err(why) => panic!("Couldn't spawn {}: {}", self.clipboard_bin, why),
+            Ok(process) => process,
+        };
+        match process.stdin.unwrap().write_all(s.as_bytes()) {
+            Err(why) => panic!("Couldn't write to {} stdin: {}", self.clipboard_bin, why),
+            Ok(_) => {},
+        }
+    }
+
     fn populate_item_details(&mut self) {
         self.item_details = Some(self.session.get_item(&self.current_item().id).unwrap());
     }
@@ -208,6 +237,7 @@ impl App {
                         KeyCode::Up        => self.previous_item(AppView::ItemListView),
                         KeyCode::Char('k') => self.previous_item(AppView::ItemListView),
                         KeyCode::Char(':') => self.input_mode = InputMode::Command,
+                        KeyCode::Char('y') => self.yank(),
                         KeyCode::Enter     => {
                             self.populate_item_details();
                             self.app_view = AppView::ItemView;
@@ -215,11 +245,12 @@ impl App {
                         _ => {}
                     },
                     AppView::ItemView => match key_event.code {
+                        KeyCode::Char('q') => self.app_view = AppView::ItemListView,
                         KeyCode::Down      => self.next_item(AppView::ItemView),
                         KeyCode::Char('j') => self.next_item(AppView::ItemView),
                         KeyCode::Up        => self.previous_item(AppView::ItemView),
                         KeyCode::Char('k') => self.previous_item(AppView::ItemView),
-                        KeyCode::Char('q') => self.app_view = AppView::ItemListView,
+                        KeyCode::Char('y') => self.yank(),
                         _ => {}
                     },
                     AppView::Exit => {},
