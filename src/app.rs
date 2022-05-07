@@ -1,6 +1,6 @@
 /// Render data with TUI
 use crossterm::{
-    event::{Event, KeyCode},
+    event::{Event, KeyCode, KeyModifiers},
 };
 use std::convert::TryFrom;
 use std::io::Write;
@@ -122,38 +122,42 @@ impl App {
         );
     }
 
-    pub fn next_item(&mut self, app_view: AppView) {
-        match app_view {
-            AppView::ItemListView => {
-                let i = try_inc(self.item_list_table_state.selected(), self.items.len());
-                self.item_list_table_state.select(Some(i));
-            },
-            AppView::ItemView => {
-                let i = try_inc(
-                    self.item_table_state.selected(),
-                    self.item_details.as_ref().unwrap().fields.len()
-                );
-                self.item_table_state.select(Some(i));
-            },
-            _ => {}
-        }
+    pub fn next_item(&mut self, n: u32, app_view: AppView) {
+        for _ in 0..n {
+            match app_view {
+                AppView::ItemListView => {
+                    let i = try_inc(self.item_list_table_state.selected(), self.items.len());
+                    self.item_list_table_state.select(Some(i));
+                },
+                AppView::ItemView => {
+                    let i = try_inc(
+                        self.item_table_state.selected(),
+                        self.item_details.as_ref().unwrap().fields.len()
+                    );
+                    self.item_table_state.select(Some(i));
+                },
+                _ => {}
+            };
+        };
     }
 
-    pub fn previous_item(&mut self, app_view: AppView) {
-        match app_view {
-            AppView::ItemListView => {
-                let i = try_dec(self.item_list_table_state.selected(), self.items.len());
-                self.item_list_table_state.select(Some(i));
-            },
-            AppView::ItemView => {
-                let i = try_dec(
-                    self.item_table_state.selected(),
-                    self.item_details.as_ref().unwrap().fields.len()
-                );
-                self.item_table_state.select(Some(i));
-            },
-            _ => {}
-        }
+    pub fn previous_item(&mut self, n: u32, app_view: AppView) {
+        for _ in 0..n {
+            match app_view {
+                AppView::ItemListView => {
+                    let i = try_dec(self.item_list_table_state.selected(), self.items.len());
+                    self.item_list_table_state.select(Some(i));
+                },
+                AppView::ItemView => {
+                    let i = try_dec(
+                        self.item_table_state.selected(),
+                        self.item_details.as_ref().unwrap().fields.len()
+                    );
+                    self.item_table_state.select(Some(i));
+                },
+                _ => {}
+            };
+        };
     }
 
     pub fn current_item(&self) -> &op::ItemListEntry {
@@ -231,11 +235,21 @@ impl App {
             Event::Key(key_event) => match self.input_mode {
                 InputMode::Normal => match self.app_view {
                     AppView::ItemListView => match key_event.code {
+                        KeyCode::Char('d') => match key_event.modifiers {
+                            // FIXME: This should dynamically go halfway
+                            KeyModifiers::CONTROL => self.next_item(6, AppView::ItemListView),
+                            _ => {}
+                        }
+                        KeyCode::Char('u') => match key_event.modifiers {
+                            // FIXME: This should dynamically go halfway
+                            KeyModifiers::CONTROL => self.previous_item(6, AppView::ItemListView),
+                            _ => {}
+                        }
                         KeyCode::Char('q') => self.app_view = AppView::Exit,
-                        KeyCode::Down      => self.next_item(AppView::ItemListView),
-                        KeyCode::Char('j') => self.next_item(AppView::ItemListView),
-                        KeyCode::Up        => self.previous_item(AppView::ItemListView),
-                        KeyCode::Char('k') => self.previous_item(AppView::ItemListView),
+                        KeyCode::Down      => self.next_item(1, AppView::ItemListView),
+                        KeyCode::Char('j') => self.next_item(1, AppView::ItemListView),
+                        KeyCode::Up        => self.previous_item(1, AppView::ItemListView),
+                        KeyCode::Char('k') => self.previous_item(1, AppView::ItemListView),
                         KeyCode::Char(':') => self.input_mode = InputMode::Command,
                         KeyCode::Char('y') => self.yank(),
                         KeyCode::Enter     => {
@@ -245,11 +259,21 @@ impl App {
                         _ => {}
                     },
                     AppView::ItemView => match key_event.code {
+                        KeyCode::Char('d') => match key_event.modifiers {
+                            // FIXME: This should dynamically go halfway
+                            KeyModifiers::CONTROL => self.next_item(6, AppView::ItemView),
+                            _ => {}
+                        }
+                        KeyCode::Char('u') => match key_event.modifiers {
+                            // FIXME: This should dynamically go halfway
+                            KeyModifiers::CONTROL => self.previous_item(6, AppView::ItemView),
+                            _ => {}
+                        }
                         KeyCode::Char('q') => self.app_view = AppView::ItemListView,
-                        KeyCode::Down      => self.next_item(AppView::ItemView),
-                        KeyCode::Char('j') => self.next_item(AppView::ItemView),
-                        KeyCode::Up        => self.previous_item(AppView::ItemView),
-                        KeyCode::Char('k') => self.previous_item(AppView::ItemView),
+                        KeyCode::Down      => self.next_item(1, AppView::ItemView),
+                        KeyCode::Char('j') => self.next_item(1, AppView::ItemView),
+                        KeyCode::Up        => self.previous_item(1, AppView::ItemView),
+                        KeyCode::Char('k') => self.previous_item(1, AppView::ItemView),
                         KeyCode::Char('y') => self.yank(),
                         _ => {}
                     },

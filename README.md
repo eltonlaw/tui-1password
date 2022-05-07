@@ -9,6 +9,32 @@ Interactive interface around the 1password CLI
     cargo build --release
     sudo mv ./target/release/tui-1password $HOME/.local/bin
 
+## Usage
+
+Navigation
+
+    Up Arrow / `k`  :   Up a row
+    Down Arrow / `j`:   Down a row
+    C-d                 Down 6 rows
+    C-u                 Up 6 rows
+    `q`:                Quit
+    `:`:                Open cmd mode
+    `y`:                Yank to clipboard either the selected title (in list
+
+Available commands
+
+    :q
+    :qa
+    :sort id
+    :sort id asc
+    :sort id desc
+    :sort updated_at
+    :sort updated_at asc
+    :sort updated_at desc
+    :sort title
+    :sort title asc
+    :sort title desc
+
 ## Quickstart
 
 This is a tui wrapper around the 1password CLI, so [that needs to be installed first](https://1password.com/downloads/command-line/). Pipe the token to a file
