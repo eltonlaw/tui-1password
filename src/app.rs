@@ -67,10 +67,10 @@ impl App {
             headers: config.headers,
             items: Vec::new(),
             item_details: None,
-            session: op::Session::new(config.token_path)?,
+            session: op::Session::new(format!("{}/token", config.root_dir))?,
             input_mode: InputMode::Normal,
             cmd_input: String::from(":"),
-            clipboard_bin: String::from("wl-copy"),
+            clipboard_bin: config.clipboard_bin,
         })
     }
 

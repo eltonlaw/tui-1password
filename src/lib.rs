@@ -32,7 +32,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let config = app_config::AppConfig::new();
 
     // FIXME: COPIED FROM setup_tracing, start:
-    let file_appender = RollingFileAppender::new(Rotation::NEVER, &config.home_dir, "run.log");
+    let file_appender = RollingFileAppender::new(Rotation::NEVER, &config.root_dir, "run.log");
     // Starts a new thread that writes to a file
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::fmt()
