@@ -19,7 +19,8 @@ Navigation
     C-u                 Up 6 rows
     `q`:                Quit
     `:`:                Open cmd mode
-    `y`:                Yank to clipboard either the selected title (in list
+    `y`:                Yank to clipboard either the selected title in list
+                        view or whatever field value is highlighted in item view
 
 Available commands
 
@@ -57,3 +58,5 @@ The env var is read and used to invoke CLI commands and the returned JSON is thr
 - When in item detail view `q` to go back.
 - To sort by a column use `:sort`, ex. `:sort updated_at` or `:sort updated_at desc`. Default is `:sort title asc`
 - To quit press `q`. Vim bindings `:q`<Enter> and `:qa`<Enter> also work
+
+By default `--cache` is passed to the `op` CLI.
