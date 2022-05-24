@@ -73,11 +73,11 @@ impl App {
             clipboard_bin: String::from("wl-copy"),
         })
     }
+
     pub fn populate_items(&mut self) {
         self.items = self.session.list_items().unwrap();
     }
 
-    // FIXME: Sort by sort key
     pub fn sort_item_list_by(&mut self, header: String, sd: SortDirection) {
         self.items.sort_by(
             match header.as_str() {
@@ -98,7 +98,7 @@ impl App {
         );
     }
 
-    pub fn next_item(&mut self, n: u32, app_view: AppView) {
+    fn next_item(&mut self, n: u32, app_view: AppView) {
         for _ in 0..n {
             match app_view {
                 AppView::ItemListView => {
@@ -117,7 +117,7 @@ impl App {
         };
     }
 
-    pub fn previous_item(&mut self, n: u32, app_view: AppView) {
+    fn previous_item(&mut self, n: u32, app_view: AppView) {
         for _ in 0..n {
             match app_view {
                 AppView::ItemListView => {
@@ -136,12 +136,12 @@ impl App {
         };
     }
 
-    pub fn current_item(&self) -> &op::ItemListEntry {
+    fn current_item(&self) -> &op::ItemListEntry {
         let i = self.item_list_table_state.selected().unwrap_or(0);
         &self.items[i]
     }
 
-    pub fn current_item_detail(&self) -> &op::ItemDetailsField {
+    fn current_item_detail(&self) -> &op::ItemDetailsField {
         let i = self.item_table_state.selected().unwrap_or(0);
         &self.item_details.as_ref().unwrap().fields[i]
     }
