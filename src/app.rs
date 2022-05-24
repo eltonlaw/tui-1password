@@ -16,6 +16,7 @@ use tui::{
 use super::app_config::{AppConfig};
 use super::op;
 use super::ui;
+use super::util;
 
 /// Different available views that the app can display API data
 ///
@@ -55,31 +56,6 @@ pub struct App {
     pub input_mode: InputMode,
     pub cmd_input: String,
     pub clipboard_bin: String,
-}
-
-pub fn try_inc(idx: Option<usize>, max: usize) -> usize {
-    match idx {
-        Some(i) => {
-            if i >= max - 1 {
-                0
-            } else {
-                i + 1
-            }
-        }
-        None => 0,
-    }
-}
-
-pub fn try_dec(idx: Option<usize>, max: usize) -> usize {
-    match idx {
-        Some(i) => {
-            match i {
-                0 => max - 1,
-                _ => i - 1,
-            }
-        }
-        None => 0,
-    }
 }
 
 impl App {
@@ -126,11 +102,11 @@ impl App {
         for _ in 0..n {
             match app_view {
                 AppView::ItemListView => {
-                    let i = try_inc(self.item_list_table_state.selected(), self.items.len());
+                    let i = util::inc_or_wrap(self.item_list_table_state.selected(), self.items.len());
                     self.item_list_table_state.select(Some(i));
                 },
                 AppView::ItemView => {
-                    let i = try_inc(
+                    let i = util::inc_or_wrap(
                         self.item_table_state.selected(),
                         self.item_details.as_ref().unwrap().fields.len()
                     );
@@ -145,11 +121,11 @@ impl App {
         for _ in 0..n {
             match app_view {
                 AppView::ItemListView => {
-                    let i = try_dec(self.item_list_table_state.selected(), self.items.len());
+                    let i = util::dec_or_wrap(self.item_list_table_state.selected(), self.items.len());
                     self.item_list_table_state.select(Some(i));
                 },
                 AppView::ItemView => {
-                    let i = try_dec(
+                    let i = util::dec_or_wrap(
                         self.item_table_state.selected(),
                         self.item_details.as_ref().unwrap().fields.len()
                     );

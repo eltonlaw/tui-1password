@@ -14,6 +14,7 @@ pub mod err;
 pub mod op;
 pub mod terminal;
 pub mod ui;
+pub mod util;
 
 fn draw_app<B: Backend>(terminal: &mut Terminal<B>, mut app: app::App) -> io::Result<()> {
     loop {
