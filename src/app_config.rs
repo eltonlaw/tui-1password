@@ -26,7 +26,7 @@ impl AppConfig {
     }
     pub fn new() -> Self {
         let config_fp = format!("{}/.tui-1password/tui-1password.yaml", env::var("HOME").unwrap());
-        if let Ok(_) = fs::metadata(&config_fp) {
+        if fs::metadata(&config_fp).is_ok() {
             tracing::info!("Config file read in from: {}", &config_fp);
             let config_str = fs::read_to_string(&config_fp).unwrap();
             return serde_yaml::from_str(config_str.as_str()).unwrap();
