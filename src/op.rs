@@ -13,7 +13,7 @@ use tracing;
 use super::err;
 
 // Temporary tokens from `op signin` last for 30 minutes
-static OP_TOKEN_TTL: u64 = 1800;
+const OP_TOKEN_TTL: u64 = 1800;
 
 #[derive(Debug)]
 pub struct Session {
