@@ -69,7 +69,7 @@ impl App {
             item_details: None,
             session: op::Session::new(format!("{}/token", config.root_dir))?,
             input_mode: InputMode::Normal,
-            cmd_input: String::from(":"),
+            cmd_input: String::from(""),
             clipboard_bin: config.clipboard_bin,
         })
     }
@@ -148,7 +148,7 @@ impl App {
 
     fn reset_cmd_input(&mut self) {
         self.input_mode = InputMode::Normal;
-        self.cmd_input = String::from(":");
+        self.cmd_input = String::from("");
     }
 
     fn run_command(&mut self) {
@@ -226,7 +226,14 @@ impl App {
                         KeyCode::Char('j') => self.next_item(1, AppView::ItemListView),
                         KeyCode::Up        => self.previous_item(1, AppView::ItemListView),
                         KeyCode::Char('k') => self.previous_item(1, AppView::ItemListView),
-                        KeyCode::Char(':') => self.input_mode = InputMode::Command,
+                        KeyCode::Char(':') => {
+                            self.input_mode = InputMode::Command;
+                            self.cmd_input = String::from(":");
+                        },
+                        KeyCode::Char('/') => {
+                            self.input_mode = InputMode::Command;
+                            self.cmd_input = String::from("/");
+                        },
                         KeyCode::Char('y') => self.yank(),
                         KeyCode::Enter     => {
                             self.populate_item_details();
@@ -258,7 +265,12 @@ impl App {
                 InputMode::Command => match key_event.code {
                     KeyCode::Enter => { self.run_command(); self.reset_cmd_input(); },
                     KeyCode::Char(c) => self.cmd_input.push(c),
-                    KeyCode::Backspace => { self.cmd_input.pop(); },
+                    KeyCode::Backspace => {
+                        self.cmd_input.pop();
+                        if self.cmd_input.is_empty() {
+                            self.input_mode = InputMode::Normal;
+                        }
+                    },
                     KeyCode::Esc => self.reset_cmd_input(),
                     _ => {},
                 }
