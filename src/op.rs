@@ -21,12 +21,26 @@ pub struct Session {
     pub token: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ItemUrl {
+    label: String,
+    primary: bool,
+    href: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ItemDetailsVault {
+    pub id: String,
+    pub name: String,
+}
+
 /// Struct representing each element in the json list returned by `op item list`
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ItemListEntry {
     pub id: String,
     pub title: String,
     pub version: u8,
+    pub vault: ItemDetailsVault,
     // FIXME: Should be an enum
     pub category: String,
 
@@ -34,6 +48,8 @@ pub struct ItemListEntry {
     pub last_edited_by: String,
     pub created_at: String,
     pub updated_at: String,
+    pub additional_information: String,
+    pub urls: Vec<ItemUrl>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -43,11 +59,6 @@ pub struct ItemDetailsField {
     pub purpose: Option<String>,
     pub label: Option<String>,
     pub value: Option<String>
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ItemDetailsVault {
-    pub id: String,
 }
 
 /// Struct representing the json map returned by `op item get`

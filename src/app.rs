@@ -75,7 +75,11 @@ impl App {
     }
 
     pub fn populate_items(&mut self) {
-        self.items = self.session.list_items().unwrap();
+        if let Ok(items) = self.session.list_items() {
+            self.items = items;
+        } else {
+            tracing::error!("Couldn't populate items");
+        }
     }
 
     pub fn sort_item_list_by(&mut self, header: String, sd: SortDirection) {
