@@ -23,8 +23,8 @@ pub struct Session {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ItemUrl {
-    label: String,
-    primary: bool,
+    label: Option<String>,
+    primary: Option<bool>,
     href: String,
 }
 
@@ -48,8 +48,8 @@ pub struct ItemListEntry {
     pub last_edited_by: String,
     pub created_at: String,
     pub updated_at: String,
-    pub additional_information: String,
-    pub urls: Vec<ItemUrl>
+    pub additional_information: Option<String>,
+    pub urls: Option<Vec<ItemUrl>>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

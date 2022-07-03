@@ -75,10 +75,9 @@ impl App {
     }
 
     pub fn populate_items(&mut self) {
-        if let Ok(items) = self.session.list_items() {
-            self.items = items;
-        } else {
-            tracing::error!("Couldn't populate items");
+        match self.session.list_items() {
+            Ok(items) => self.items = items,
+            Err(err) => tracing::error!("Couldn't populate items: {}", err),
         }
     }
 
