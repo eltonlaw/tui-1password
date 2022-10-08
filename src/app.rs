@@ -203,11 +203,19 @@ impl App {
             },
             _ => { "" },
         };
-        let process = match Command::new(self.clipboard_bin.as_str())
+        let cmd_components: Vec<&str> = self.clipboard_bin.as_str().split(" ").collect();
+        let mut cmd = Command::new(cmd_components[0]);
+        if cmd_components.len() > 1 {
+            cmd.args(&cmd_components[1..]);
+        }
+        let process = match cmd
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn() {
-            Err(why) => panic!("Couldn't spawn {}: {}", self.clipboard_bin, why),
+            Err(why) => {
+                tracing::error!("Couldn't spawn {:?}: {}", cmd_components, why);
+                panic!("Couldn't spawn {}: {}", self.clipboard_bin, why);
+            },
             Ok(process) => process,
         };
         match process.stdin.unwrap().write_all(s.as_bytes()) {
