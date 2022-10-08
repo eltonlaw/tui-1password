@@ -29,10 +29,10 @@ fn draw_app<B: Backend>(terminal: &mut Terminal<B>, mut app: app::App) -> io::Re
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     // To be updated with CLI/config file
-    let config = app_config::AppConfig::new();
+    let root_dir = app_config::get_root_dir();
 
     // FIXME: COPIED FROM setup_tracing, start:
-    let file_appender = RollingFileAppender::new(Rotation::NEVER, &config.root_dir, "run.log");
+    let file_appender = RollingFileAppender::new(Rotation::NEVER, &root_dir, "run.log");
     // Starts a new thread that writes to a file
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
     tracing_subscriber::fmt()
@@ -41,8 +41,9 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         .with_max_level(Level::TRACE)
         .init();
     // FIXME: setup_tracing END
-
+    let config = app_config::AppConfig::new(root_dir);
     tracing::info!("Starting new instance tui-1password instance with config: {:?}", config);
+
     // create app and run it
     match app::App::new(config) {
         Result::Ok(mut app) => {

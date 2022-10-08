@@ -1,3 +1,5 @@
+use std::path::Path;
+
 /// Arg `idx` incremented by 1, if past `max`, return 0
 pub fn inc_or_wrap(idx: Option<usize>, max: usize) -> usize {
     match max {
@@ -31,6 +33,11 @@ pub fn dec_or_wrap(idx: Option<usize>, max: usize) -> usize {
     }
 }
 
+/// Returns true if file path exists, else false
+pub fn file_exists(fp: &String) -> bool {
+    return Path::new(fp.as_str()).is_file();
+}
+
 #[test]
 fn inc_or_wrap_test() {
     assert_eq!(inc_or_wrap(Some(1), 3), 2);
@@ -43,4 +50,10 @@ fn dec_or_wrap_test() {
     assert_eq!(dec_or_wrap(Some(1), 3), 0);
     assert_eq!(dec_or_wrap(Some(0), 3), 2);
     assert_eq!(dec_or_wrap(Some(0), 0), 0);
+}
+
+#[test]
+fn file_exists_test() {
+    assert_eq!(true, file_exists(&String::from("Cargo.toml")));
+    assert_eq!(false, file_exists(&String::from("doesnt-exist.toml")));
 }

@@ -77,7 +77,10 @@ impl App {
     pub fn populate_items(&mut self) {
         match self.session.list_items() {
             Ok(items) => self.items = items,
-            Err(err) => tracing::error!("Couldn't populate items: {}", err),
+            Err(err) => {
+                tracing::error!("Couldn't populate items: {}", err);
+                panic!("Couldn't populate items: {}", err);
+            }
         }
     }
 
