@@ -36,6 +36,34 @@ Available commands
     :sort title asc
     :sort title desc
 
+
+## Configuration
+
+A configuration file is looked for in the following order. If none of these exist, it will loop back to the top and try to create that file in each directory. Wherever it lands, the parent dir of the config file is the app root directory.
+
+- `${TUI_1PASSWORD_HOME}/tui-1password.yaml`
+- `${XDG_CONFIG_HOME}/tui-1password/tui-1password.yaml`
+- `${HOME}/.tui-1password/tui-1password.yaml`
+
+Sample `tui-1password.yaml` file. This is still a bit of a WIP, so every available option has to be set.
+
+    ---
+    headers:
+      - id
+      - title
+      - updated_at
+    root_dir: /home/eltonlaw/.config/tui-1password
+    debug: false
+    clipboard_bin: wl-copy
+
+`headers`: The columns used in the top level item list view. Defaults to `[id title updated_at]`. You can add any of the properties from `struct ItemListEntry`.
+
+`clipboard_bin`: Some clipboard copy binary that you can pipe a string into. On mac this would be `pbcopy` and on some linux systems I think this would be `xsel -ib`
+
+`root_dir`: This should just be the parent dir of the config file. A bit redundant, and will be unnecessary in the future.
+
+`debug`: Debug flag. Doesn't do much at the moment.
+
 ## Quickstart
 
 This is a tui wrapper around the 1password CLI, so [that needs to be installed first](https://1password.com/downloads/command-line/). Pipe the token to a file
