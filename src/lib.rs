@@ -53,11 +53,15 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             let mut tm = terminal::TerminalModifier::new()?;
             // Loop forever, if return, there's an error
             let res = draw_app(&mut tm.terminal, app);
-            if let Err(err) = res{
-                tracing::error!("{:?}", err);
+            if let Err(err) = res {
+                eprintln!("{}", err);
+                tracing::error!("App loop ended and returned error: {:?}", err);
             }
         }
-        Result::Err(err) => eprintln!("{}", err),
+        Result::Err(err) => {
+            eprintln!("{}", err);
+            tracing::error!("Couldn't create app: {}", err);
+        },
     };
     Ok(())
 }
