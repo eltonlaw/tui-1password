@@ -86,6 +86,8 @@ impl App {
 
     pub fn sort_item_list_by(&mut self, header: String, sd: SortDirection) {
         self.items.sort_by(
+            // FIXME: Would be good to write a macro so that we can create comp functions for every
+            // property in the ItemListEntry
             match header.as_str() {
                 "id"         => match sd {
                     SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.id.cmp(&b.id),
@@ -249,6 +251,7 @@ impl App {
                         KeyCode::Char('j') => self.next_item(1, AppView::ItemListView),
                         KeyCode::Up        => self.previous_item(1, AppView::ItemListView),
                         KeyCode::Char('k') => self.previous_item(1, AppView::ItemListView),
+                        KeyCode::Char('G') => self.item_list_table_state.select(Some(self.items.len() - 1)),
                         KeyCode::Char(':') => {
                             self.input_mode = InputMode::Command;
                             self.cmd_input = String::from(":");

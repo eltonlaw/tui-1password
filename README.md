@@ -37,6 +37,39 @@ Available commands
     :sort title desc
 
 
+
+## Quickstart
+
+This is a tui wrapper around the 1password CLI, so [that needs to be installed first](https://1password.com/downloads/command-line/). Pipe the token to a file
+
+	mkdir -p ~/.tui-1password
+    op signin my > ~/.tui-1password/token
+
+The `token` file looks something like this, it's just a shell script exporting an environment var
+
+    export OP_SESSION_QAXFAARFSVGTTOAHF37M76FDT4="AVpOk3jBbp-EcTxoEyYdwFVMPIrSZII4MZdngyq9MFv"
+    # This command is meant to be used with your shell's eval function.
+    # Run 'eval $(op signin my)' to sign in to your 1Password account.
+    # Use the --raw flag to only output the session token.
+
+The env var is read and used to invoke CLI commands and the returned JSON is thrown into the interface. Session tokens expire after 30 min so this will need to be run again.
+
+![Item List](https://github.com/eltonlaw/tui-1password/blob/main/imgs/itemlist.png?raw=true)
+
+By default `--cache` is passed to the `op` CLI.
+
+### Navigation
+
+- `<Enter>`: To see a specific entry, shows item detail view
+- `q`: When in item detail view to go back.
+
+### Commands
+
+Command mode is entered by typing in `:` followed by the command name and pressing enter.
+
+- `:q`, `:qa` Quit
+- `:sort <column> <OPTIONAL:order>`: Sorts by a column ex. `:sort updated_at` or `:sort updated_at desc`. Default is `:sort title asc`.
+
 ## Configuration
 
 A configuration file is looked for in the following order. If none of these exist, it will loop back to the top and try to create that file in each directory. Wherever it lands, the parent dir of the config file is the app root directory.
@@ -63,28 +96,3 @@ Sample `tui-1password.yaml` file. This is still a bit of a WIP, so every availab
 `root_dir`: This should just be the parent dir of the config file. A bit redundant, and will be unnecessary in the future.
 
 `debug`: Debug flag. Doesn't do much at the moment.
-
-## Quickstart
-
-This is a tui wrapper around the 1password CLI, so [that needs to be installed first](https://1password.com/downloads/command-line/). Pipe the token to a file
-
-	mkdir -p ~/.tui-1password
-    op signin my > ~/.tui-1password/token
-
-The `token` file looks something like this, it's just a shell script exporting an environment var
-
-    export OP_SESSION_QAXFAARFSVGTTOAHF37M76FDT4="AVpOk3jBbp-EcTxoEyYdwFVMPIrSZII4MZdngyq9MFv"
-    # This command is meant to be used with your shell's eval function.
-    # Run 'eval $(op signin my)' to sign in to your 1Password account.
-    # Use the --raw flag to only output the session token.
-
-The env var is read and used to invoke CLI commands and the returned JSON is thrown into the interface. Session tokens expire after 30 min so this will need to be run again.
-
-![Item List](https://github.com/eltonlaw/tui-1password/blob/main/imgs/itemlist.png?raw=true)
-
-- To see a specific entry, `<Enter>` shows item detail view
-- When in item detail view `q` to go back.
-- To sort by a column use `:sort`, ex. `:sort updated_at` or `:sort updated_at desc`. Default is `:sort title asc`
-- To quit press `q`. Vim bindings `:q`<Enter> and `:qa`<Enter> also work
-
-By default `--cache` is passed to the `op` CLI.
