@@ -22,12 +22,10 @@ use super::util;
 ///
 /// - ItemListView: for looking through the list of stored data
 /// - ItemView: display all details of specific item
-/// - Exit: When entered, stops the app
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AppView {
     ItemListView,
     ItemView,
-    Exit,
 }
 
 /// Normal mode is regular operation, command is when `:` is typed
@@ -46,6 +44,7 @@ pub enum SortDirection {
 }
 
 pub struct App {
+    pub is_running: bool,
     pub item_table_state: TableState,
     pub item_list_table_state: TableState,
     pub app_view: AppView,
@@ -61,6 +60,7 @@ pub struct App {
 impl App {
     pub fn new(config: AppConfig) -> Result<App, Box<dyn error::Error>> {
         Ok(App {
+            is_running: true,
             item_table_state: TableState::default(),
             item_list_table_state: TableState::default(),
             app_view: AppView::ItemListView,
@@ -120,7 +120,6 @@ impl App {
                     );
                     self.item_table_state.select(Some(i));
                 },
-                _ => {}
             };
         };
     }
@@ -139,7 +138,6 @@ impl App {
                     );
                     self.item_table_state.select(Some(i));
                 },
-                _ => {}
             };
         };
     }
@@ -173,8 +171,8 @@ impl App {
         let cmd = chars.as_str();
         if ch == ':' {
             match cmd {
-                "q" => self.app_view = AppView::Exit,
-                "qa" => self.app_view = AppView::Exit,
+                "q" => self.is_running = false,
+                "qa" => self.is_running = false,
                 "sort" => {
                     self.sort_item_list_by(
                         arg1,
@@ -203,7 +201,6 @@ impl App {
             AppView::ItemView => {
                 self.current_item_detail().value.as_ref().unwrap().as_str()
             },
-            _ => { "" },
         };
         let cmd_components: Vec<&str> = self.clipboard_bin.as_str().split(" ").collect();
         let mut cmd = Command::new(cmd_components[0]);
@@ -246,7 +243,7 @@ impl App {
                             KeyModifiers::CONTROL => self.previous_item(6, AppView::ItemListView),
                             _ => {}
                         }
-                        KeyCode::Char('q') => self.app_view = AppView::Exit,
+                        KeyCode::Char('q') => self.is_running = false,
                         KeyCode::Down      => self.next_item(1, AppView::ItemListView),
                         KeyCode::Char('j') => self.next_item(1, AppView::ItemListView),
                         KeyCode::Up        => self.previous_item(1, AppView::ItemListView),
@@ -286,7 +283,6 @@ impl App {
                         KeyCode::Char('y') => self.yank(),
                         _ => {}
                     },
-                    AppView::Exit => {},
                 },
                 InputMode::Command => match key_event.code {
                     KeyCode::Enter => { self.run_command(); self.reset_cmd_input(); },

@@ -21,7 +21,7 @@ fn draw_app<B: Backend>(terminal: &mut Terminal<B>, mut app: app::App) -> io::Re
         terminal.draw(|f| app::ui(f, &mut app))?;
 
         app.handle_event(event::read()?);
-        if app.app_view == app::AppView::Exit {
+        if !app.is_running {
             return Ok(());
         }
     }
