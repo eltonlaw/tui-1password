@@ -16,13 +16,12 @@ use tui::{
 use super::app_config::{AppConfig};
 use super::op;
 use super::ui;
-use super::util;
 
 /// Different available views that the app can display API data
 ///
 /// - ItemListView: for looking through the list of stored data
 /// - ItemView: display all details of specific item
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AppView {
     ItemListView,
     ItemView,
@@ -106,49 +105,59 @@ impl App {
         );
     }
 
-    fn next_item(&mut self, n: u32, app_view: AppView) {
-        for _ in 0..n {
-            match app_view {
-                AppView::ItemListView => {
-                    let i = util::inc_or_wrap(self.item_list_table_state.selected(), self.items.len());
-                    self.item_list_table_state.select(Some(i));
-                },
-                AppView::ItemView => {
-                    let i = util::inc_or_wrap(
-                        self.item_table_state.selected(),
-                        self.item_details.as_ref().unwrap().fields.len()
-                    );
-                    self.item_table_state.select(Some(i));
-                },
-            };
+    /// Return the index of the last element for the passed in app view
+    fn table_max_index(&self, app_view: &AppView) -> usize {
+        let len = match app_view {
+            AppView::ItemListView => self.items.len(),
+            AppView::ItemView => self.item_details.as_ref().unwrap().fields.len(),
         };
+        // Hacky just-in-case bit for always returning a usize. There should
+        // always be at least one item in the list of items so `else` should
+        // never be hit.
+        return if len == 0 { 0 } else { len - 1 }
     }
 
-    fn previous_item(&mut self, n: u32, app_view: AppView) {
-        for _ in 0..n {
-            match app_view {
-                AppView::ItemListView => {
-                    let i = util::dec_or_wrap(self.item_list_table_state.selected(), self.items.len());
-                    self.item_list_table_state.select(Some(i));
-                },
-                AppView::ItemView => {
-                    let i = util::dec_or_wrap(
-                        self.item_table_state.selected(),
-                        self.item_details.as_ref().unwrap().fields.len()
-                    );
-                    self.item_table_state.select(Some(i));
-                },
-            };
+    /// Returns index of selected row for passed in AppView
+    fn selected_index(&self, app_view: &AppView) -> usize {
+        match app_view {
+            AppView::ItemListView => self.item_list_table_state.selected().unwrap_or(0),
+            AppView::ItemView => self.item_table_state.selected().unwrap_or(0),
+        }
+    }
+
+    /// Set index of selected row to i for passed in AppView
+    fn set_selected_index(&mut self, i: i32, app_view: &AppView) {
+        let max_i = self.table_max_index(&app_view);
+        let table_state = match app_view {
+            AppView::ItemListView => &mut self.item_list_table_state,
+            AppView::ItemView => &mut self.item_table_state,
         };
+        let selected_i: usize = {
+            if i < 0 {
+                0
+            } else if i > max_i as i32 {
+                max_i
+            } else {
+                usize::try_from(i).unwrap()
+            }
+        };
+        table_state.select(Some(selected_i));
+    }
+
+    /// Add some int to selected row index for passed in AppView.
+    /// Pass in positive i_delta to go down a row, pass in negative i_delta
+    /// to go up a row.
+    fn add_selected_index(&mut self, i_delta: i32, app_view: &AppView) {
+        let i_current = i32::try_from(self.selected_index(&app_view)).unwrap();
+        self.set_selected_index(i_current + i_delta, &app_view);
     }
 
     fn current_item(&self) -> &op::ItemListEntry {
-        let i = self.item_list_table_state.selected().unwrap_or(0);
-        &self.items[i]
+        &self.items[self.selected_index(&AppView::ItemListView)]
     }
 
     fn current_item_detail(&self) -> &op::ItemDetailsField {
-        let i = self.item_table_state.selected().unwrap_or(0);
+        let i = self.selected_index(&AppView::ItemView);
         &self.item_details.as_ref().unwrap().fields[i]
     }
 
@@ -235,20 +244,22 @@ impl App {
                     AppView::ItemListView => match key_event.code {
                         KeyCode::Char('d') => match key_event.modifiers {
                             // FIXME: This should dynamically go halfway
-                            KeyModifiers::CONTROL => self.next_item(6, AppView::ItemListView),
+                            KeyModifiers::CONTROL => self.add_selected_index(6, &AppView::ItemListView),
                             _ => {}
                         }
                         KeyCode::Char('u') => match key_event.modifiers {
                             // FIXME: This should dynamically go halfway
-                            KeyModifiers::CONTROL => self.previous_item(6, AppView::ItemListView),
+                            KeyModifiers::CONTROL => self.add_selected_index(-6, &AppView::ItemListView),
                             _ => {}
                         }
                         KeyCode::Char('q') => self.is_running = false,
-                        KeyCode::Down      => self.next_item(1, AppView::ItemListView),
-                        KeyCode::Char('j') => self.next_item(1, AppView::ItemListView),
-                        KeyCode::Up        => self.previous_item(1, AppView::ItemListView),
-                        KeyCode::Char('k') => self.previous_item(1, AppView::ItemListView),
-                        KeyCode::Char('G') => self.item_list_table_state.select(Some(self.items.len() - 1)),
+                        KeyCode::Down      => self.add_selected_index(1, &AppView::ItemListView),
+                        KeyCode::Char('j') => self.add_selected_index(1, &AppView::ItemListView),
+                        KeyCode::Up        => self.add_selected_index(-1, &AppView::ItemListView),
+                        KeyCode::Char('k') => self.add_selected_index(-1, &AppView::ItemListView),
+                        KeyCode::Char('G') => self.set_selected_index(self.table_max_index(&AppView::ItemListView) as i32, &AppView::ItemListView),
+                        // FIXME: vim uses `gg` as the "go to first element" key binding
+                        KeyCode::Char('g') => self.item_list_table_state.select(Some(0)),
                         KeyCode::Char(':') => {
                             self.input_mode = InputMode::Command;
                             self.cmd_input = String::from(":");
@@ -267,19 +278,19 @@ impl App {
                     AppView::ItemView => match key_event.code {
                         KeyCode::Char('d') => match key_event.modifiers {
                             // FIXME: This should dynamically go halfway
-                            KeyModifiers::CONTROL => self.next_item(6, AppView::ItemView),
+                            KeyModifiers::CONTROL => self.add_selected_index(6, &AppView::ItemView),
                             _ => {}
                         }
                         KeyCode::Char('u') => match key_event.modifiers {
                             // FIXME: This should dynamically go halfway
-                            KeyModifiers::CONTROL => self.previous_item(6, AppView::ItemView),
+                            KeyModifiers::CONTROL => self.add_selected_index(-6, &AppView::ItemView),
                             _ => {}
                         }
                         KeyCode::Char('q') => self.app_view = AppView::ItemListView,
-                        KeyCode::Down      => self.next_item(1, AppView::ItemView),
-                        KeyCode::Char('j') => self.next_item(1, AppView::ItemView),
-                        KeyCode::Up        => self.previous_item(1, AppView::ItemView),
-                        KeyCode::Char('k') => self.previous_item(1, AppView::ItemView),
+                        KeyCode::Down      => self.add_selected_index(1, &AppView::ItemView),
+                        KeyCode::Char('j') => self.add_selected_index(1, &AppView::ItemView),
+                        KeyCode::Up        => self.add_selected_index(-1, &AppView::ItemView),
+                        KeyCode::Char('k') => self.add_selected_index(-1, &AppView::ItemView),
                         KeyCode::Char('y') => self.yank(),
                         _ => {}
                     },
