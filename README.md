@@ -2,13 +2,19 @@
 
 Interactive interface around the 1password CLI
 
+- [Install](##Install)
+    * [Build from source](###Build-from-source)
+- [Quickstart](##Quickstart)
+- [Usage](##Usage)
+- [Configuration](##Configuration)
+
 ## Install
 
-### From source
+### Build from source
 
+    git clone https://github.com/eltonlaw/tui-1password.git
     cargo build --release
     sudo mv ./target/release/tui-1password $HOME/.local/bin
-
 
 ## Quickstart
 
