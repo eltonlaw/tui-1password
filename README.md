@@ -9,34 +9,6 @@ Interactive interface around the 1password CLI
     cargo build --release
     sudo mv ./target/release/tui-1password $HOME/.local/bin
 
-## Usage
-
-Navigation
-
-    Up Arrow / `k`  :   Up a row
-    Down Arrow / `j`:   Down a row
-    C-d                 Down 6 rows
-    C-u                 Up 6 rows
-    `q`:                Quit
-    `:`:                Open cmd mode
-    `y`:                Yank to clipboard either the selected title in list
-                        view or whatever field value is highlighted in item view
-
-Available commands
-
-    :q
-    :qa
-    :sort id
-    :sort id asc
-    :sort id desc
-    :sort updated_at
-    :sort updated_at asc
-    :sort updated_at desc
-    :sort title
-    :sort title asc
-    :sort title desc
-
-
 
 ## Quickstart
 
@@ -58,17 +30,41 @@ The env var is read and used to invoke CLI commands and the returned JSON is thr
 
 By default `--cache` is passed to the `op` CLI.
 
-### Navigation
+## Usage
 
-- `<Enter>`: To see a specific entry, shows item detail view
-- `q`: When in item detail view to go back.
+Keybindings common to all views:
 
-### Commands
+    Up Arrow / `k`  :   Up a row
+    Down Arrow / `j`:   Down a row
+    C-d                 Down 6 rows
+    C-u                 Up 6 rows
+    `q`:                Quit or go back
 
-Command mode is entered by typing in `:` followed by the command name and pressing enter.
+Keybindings available when in the root item list view:
 
-- `:q`, `:qa` Quit
-- `:sort <column> <OPTIONAL:order>`: Sorts by a column ex. `:sort updated_at` or `:sort updated_at desc`. Default is `:sort title asc`.
+    Enter:              Look at details of highlighted entry
+    `g`:                Go to first item
+    `G`:                Go to last item
+    `:`:                Open cmd mode
+
+Keybindings available when looking at the details of an individual item:
+
+    `y`:                Yank to clipboard either the selected title in list
+                        view or whatever field value is highlighted in item view
+
+Commands that can be run:
+
+    :q
+    :qa
+    :sort id
+    :sort id asc
+    :sort id desc
+    :sort updated_at
+    :sort updated_at asc
+    :sort updated_at desc
+    :sort title
+    :sort title asc
+    :sort title desc
 
 ## Configuration
 
