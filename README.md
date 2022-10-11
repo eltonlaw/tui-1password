@@ -16,6 +16,14 @@ Interactive interface around the 1password CLI
     cargo build --release
     sudo mv ./target/release/tui-1password $HOME/.local/bin
 
+### Archlinux
+
+Available via [AUR](https://aur.archlinux.org/packages/tui-1password-git)
+
+    yay -S tui-1password-git
+
+...subbing in your preferred pacman wrapper
+
 ## Quickstart
 
 This is a tui wrapper around the 1password CLI, so [that needs to be installed first](https://1password.com/downloads/command-line/). Pipe the token to a file
