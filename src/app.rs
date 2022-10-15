@@ -233,7 +233,11 @@ impl App {
     }
 
     fn populate_item_details(&mut self) {
-        self.item_details = Some(self.session.get_item(&self.current_item().id).unwrap());
+        // FIXME: Set to None if unwrap fails and amend things that grab `item_details`
+        // need to handle it too
+        let mut item_details = self.session.get_item(&self.current_item().id).unwrap();
+        item_details.fill_none_fields();
+        self.item_details = Some(item_details);
     }
 
     /// Currently only handles KeyEvents, modifies app state based on inputs

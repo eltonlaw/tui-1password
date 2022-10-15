@@ -79,6 +79,19 @@ pub struct ItemDetails {
     pub fields: Vec<ItemDetailsField>,
 }
 
+impl ItemDetails {
+    pub fn fill_none_fields(&mut self) {
+		for field in self.fields.iter_mut() {
+			match field.value {
+				Some(_) => {},
+				None => {
+                    field.value = Some(String::from(""));
+                },
+			}
+		}
+    }
+}
+
 impl Session {
     pub fn new(token_path: String) -> Result<Self, Box<dyn error::Error>> {
         if Session::is_valid_cache(&token_path) {
