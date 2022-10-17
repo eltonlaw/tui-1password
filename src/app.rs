@@ -42,7 +42,7 @@ pub enum SortDirection {
     Descending,
 }
 
-// Passed to `sort_item_list_by`
+// Used by `sort_item_list`
 pub struct SortConfig {
     pub sort_direction: SortDirection,
     pub header: String,
@@ -52,6 +52,7 @@ pub struct App {
     pub is_running: bool,
     pub item_table_state: TableState,
     pub item_list_table_state: TableState,
+    pub item_list_sort_config: SortConfig,
     pub app_view: AppView,
     pub headers: Vec<String>,
     pub items: Vec<op::ItemListEntry>,
@@ -68,6 +69,10 @@ impl App {
             is_running: true,
             item_table_state: TableState::default(),
             item_list_table_state: TableState::default(),
+            item_list_sort_config: SortConfig {
+                header: String::from("title"),
+                sort_direction: SortDirection::Ascending
+            },
             app_view: AppView::ItemListView,
             headers: config.headers,
             items: Vec::new(),
@@ -87,22 +92,23 @@ impl App {
                 panic!("Couldn't populate items: {}", err);
             }
         }
+        self.sort_item_list();
     }
 
-    pub fn sort_item_list_by(&mut self, sort_config: SortConfig) {
+    pub fn sort_item_list(&mut self) {
         self.items.sort_by(
             // FIXME: Would be good to write a macro so that we can create comp functions for every
             // property in the ItemListEntry
-            match sort_config.header.as_str() {
-                "id" => match sort_config.sort_direction {
+            match self.item_list_sort_config.header.as_str() {
+                "id" => match self.item_list_sort_config.sort_direction {
                     SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.id.cmp(&b.id),
                     SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.id.cmp(&a.id),
                 },
-                "title" => match sort_config.sort_direction {
+                "title" => match self.item_list_sort_config.sort_direction {
                     SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.title.cmp(&b.title),
                     SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.title.cmp(&a.title),
                 },
-                "updated_at" => match sort_config.sort_direction {
+                "updated_at" => match self.item_list_sort_config.sort_direction {
                     SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.updated_at.cmp(&b.updated_at),
                     SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.updated_at.cmp(&a.updated_at),
                 },
@@ -189,7 +195,7 @@ impl App {
                 "q" => self.is_running = false,
                 "qa" => self.is_running = false,
                 "sort" => {
-                    let sc = SortConfig {
+                    self.item_list_sort_config = SortConfig {
                         header: arg1,
                         sort_direction: {
                             if n_args == 2 {
@@ -203,7 +209,7 @@ impl App {
                             }
                         }
                     };
-                    self.sort_item_list_by(sc)
+                    self.sort_item_list();
                 },
                 _ => {}
             }
@@ -286,6 +292,7 @@ impl App {
                             self.populate_item_details();
                             self.app_view = AppView::ItemView;
                         },
+                        KeyCode::Char('R') => self.populate_items(),
                         _ => {}
                     },
                     AppView::ItemView => match key_event.code {
@@ -300,6 +307,7 @@ impl App {
                             _ => {}
                         }
                         KeyCode::Char('q') => self.app_view = AppView::ItemListView,
+                        KeyCode::Char('R') => self.populate_item_details(),
                         KeyCode::Down      => self.add_selected_index(1, &AppView::ItemView),
                         KeyCode::Char('j') => self.add_selected_index(1, &AppView::ItemView),
                         KeyCode::Up        => self.add_selected_index(-1, &AppView::ItemView),
