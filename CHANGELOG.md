@@ -1,3 +1,7 @@
+# latest
+
+- Fix issue where item details with a field that doesn't have a value gets filtered out, messing up the indexing. Yanking from that row would also cause a panic.
+
 # 0.1.1
 
 - Config file implementation. read `AppConfig` struct out of some `tui-1password.yaml`
