@@ -42,6 +42,12 @@ pub enum SortDirection {
     Descending,
 }
 
+// Passed to `sort_item_list_by`
+pub struct SortConfig {
+    pub sort_direction: SortDirection,
+    pub header: String,
+}
+
 pub struct App {
     pub is_running: bool,
     pub item_table_state: TableState,
@@ -83,20 +89,20 @@ impl App {
         }
     }
 
-    pub fn sort_item_list_by(&mut self, header: String, sd: SortDirection) {
+    pub fn sort_item_list_by(&mut self, sort_config: SortConfig) {
         self.items.sort_by(
             // FIXME: Would be good to write a macro so that we can create comp functions for every
             // property in the ItemListEntry
-            match header.as_str() {
-                "id"         => match sd {
+            match sort_config.header.as_str() {
+                "id" => match sort_config.sort_direction {
                     SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.id.cmp(&b.id),
                     SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.id.cmp(&a.id),
                 },
-                "title"      => match sd {
+                "title" => match sort_config.sort_direction {
                     SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.title.cmp(&b.title),
                     SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.title.cmp(&a.title),
                 },
-                "updated_at" => match sd {
+                "updated_at" => match sort_config.sort_direction {
                     SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.updated_at.cmp(&b.updated_at),
                     SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.updated_at.cmp(&a.updated_at),
                 },
@@ -183,18 +189,21 @@ impl App {
                 "q" => self.is_running = false,
                 "qa" => self.is_running = false,
                 "sort" => {
-                    self.sort_item_list_by(
-                        arg1,
-                        if n_args == 2 {
-                            SortDirection::Ascending
-                        } else {
-                            match arg2.as_str() {
-                                "asc" => SortDirection::Ascending,
-                                "desc" => SortDirection::Descending,
-                                &_ => SortDirection::Ascending,
+                    let sc = SortConfig {
+                        header: arg1,
+                        sort_direction: {
+                            if n_args == 2 {
+                                SortDirection::Ascending
+                            } else {
+                                match arg2.as_str() {
+                                    "asc" => SortDirection::Ascending,
+                                    "desc" => SortDirection::Descending,
+                                    &_ => SortDirection::Ascending,
+                                }
                             }
-                        },
-                    )
+                        }
+                    };
+                    self.sort_item_list_by(sc)
                 },
                 _ => {}
             }
