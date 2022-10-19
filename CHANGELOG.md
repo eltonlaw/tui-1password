@@ -1,6 +1,7 @@
 # latest
 
 - Fix issue where item details with a field that doesn't have a value gets filtered out, messing up the indexing. Yanking from that row would also cause a panic.
+- Pressing `R` reloads the item/item details (calls the CLI again)
 
 # 0.1.1
 
