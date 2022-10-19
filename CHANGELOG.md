@@ -2,6 +2,7 @@
 
 - Fix issue where item details with a field that doesn't have a value gets filtered out, messing up the indexing. Yanking from that row would also cause a panic.
 - Pressing `R` reloads the item/item details (calls the CLI again)
+- Searching with `/<pattern>` and then `<CR>` goes to the first instance of `<pattern>` anywhere in the title column. Pressing `n` goes to the next match, wrapping back to the first match when you hit the end of the matches list.
 
 # 0.1.1
 

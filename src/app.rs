@@ -16,6 +16,7 @@ use tui::{
 use super::app_config::{AppConfig};
 use super::op;
 use super::ui;
+use super::util;
 
 /// Different available views that the app can display API data
 ///
@@ -48,6 +49,13 @@ pub struct SortConfig {
     pub header: String,
 }
 
+#[derive(Debug)]
+pub struct SearchState {
+    pub pattern: String,
+    pub match_idxs: Vec<usize>,
+    pub selected_match_idx: Option<usize>,
+}
+
 pub struct App {
     pub is_running: bool,
     pub item_table_state: TableState,
@@ -60,6 +68,7 @@ pub struct App {
     pub session: op::Session,
     pub input_mode: InputMode,
     pub cmd_input: String,
+    pub search_state: Option<SearchState>,
     pub clipboard_bin: String,
 }
 
@@ -80,6 +89,7 @@ impl App {
             session: op::Session::new(format!("{}/token", config.root_dir))?,
             input_mode: InputMode::Normal,
             cmd_input: String::from(""),
+            search_state: None,
             clipboard_bin: config.clipboard_bin,
         })
     }
@@ -178,6 +188,22 @@ impl App {
         self.cmd_input = String::from("");
     }
 
+    fn select_next_search(&mut self) {
+        if let Some(ref mut search_state) = self.search_state {
+            if !search_state.match_idxs.is_empty() {
+                let new_mi = match search_state.selected_match_idx {
+                    Some(mi) => util::inc_or_wrap(mi, search_state.match_idxs.len()),
+                    // FIXME: Instead of going to top search, find closest to current
+                    None => 0,
+                };
+                let new_selected_i = search_state.match_idxs[new_mi];
+                search_state.selected_match_idx = Some(new_mi);
+                self.set_selected_index(i32::try_from(new_selected_i).unwrap(),
+                                        &AppView::ItemListView);
+            }
+        }
+    }
+
     fn run_command(&mut self) {
         let components: Vec<&str> = self.cmd_input.split(" ").collect();
         let n_args = components.len();
@@ -190,8 +216,8 @@ impl App {
         let mut chars = arg0.chars();
         let ch = chars.next().unwrap();
         let cmd = chars.as_str();
-        if ch == ':' {
-            match cmd {
+        match ch {
+            ':' => match cmd {
                 "q" => self.is_running = false,
                 "qa" => self.is_running = false,
                 "sort" => {
@@ -212,10 +238,11 @@ impl App {
                     self.sort_item_list();
                 },
                 _ => {}
+            },
+            '/' => {
+                self.select_next_search();
             }
-        };
-
-        if ch == '/' {
+            _ => {}
         };
     }
 
@@ -255,6 +282,27 @@ impl App {
         self.item_details = Some(item_details);
     }
 
+    fn search_item_list(&mut self) {
+        if let Some(ref mut search_state) = self.search_state {
+            // FIXME: Filtering could filter over the previous
+            // generated search_state.match_idxs so string matching
+            // doesn't need to run on every element every time
+            // (probably want to generate some lookup table once here)
+            search_state.match_idxs = self.items.iter()
+                .enumerate()
+                .filter(|(_, ile)| {
+                    // FIXME: Use regex for case insensitive
+                    ile.title.contains(search_state.pattern.as_str())
+                })
+                .map(|(i, _)| i)
+                .collect();
+        }
+        tracing::info!(
+            "Counts={:?} SearchState={:?}",
+            self.search_state.as_ref().unwrap().match_idxs,
+            &self.search_state);
+    }
+
     /// Currently only handles KeyEvents, modifies app state based on inputs
     pub fn handle_event(&mut self, event: Event) {
         match event {
@@ -279,6 +327,7 @@ impl App {
                         KeyCode::Char('G') => self.set_selected_index(self.table_max_index(&AppView::ItemListView) as i32, &AppView::ItemListView),
                         // FIXME: vim uses `gg` as the "go to first element" key binding
                         KeyCode::Char('g') => self.item_list_table_state.select(Some(0)),
+                        KeyCode::Char('n') => self.select_next_search(),
                         KeyCode::Char(':') => {
                             self.input_mode = InputMode::Command;
                             self.cmd_input = String::from(":");
@@ -286,6 +335,11 @@ impl App {
                         KeyCode::Char('/') => {
                             self.input_mode = InputMode::Command;
                             self.cmd_input = String::from("/");
+                            self.search_state = Some(SearchState {
+                                pattern: String::from(""),
+                                match_idxs: Vec::new(),
+                                selected_match_idx: None,
+                            });
                         },
                         KeyCode::Char('y') => self.yank(),
                         KeyCode::Enter     => {
@@ -317,8 +371,21 @@ impl App {
                     },
                 },
                 InputMode::Command => match key_event.code {
-                    KeyCode::Enter => { self.run_command(); self.reset_cmd_input(); },
-                    KeyCode::Char(c) => self.cmd_input.push(c),
+                    KeyCode::Enter => {
+                        self.run_command();
+                        self.reset_cmd_input();
+                    },
+                    KeyCode::Char(c) => {
+                        self.cmd_input.push(c);
+                        if self.cmd_input.starts_with('/') {
+                            // unwrap() is fine to use in this case cause SearchState will have
+                            // been created in the entry to InputMode::Command
+                            if let Some(ref mut s) = self.search_state {
+                                s.pattern.push(c);
+                            }
+                            self.search_item_list();
+                        }
+                    },
                     KeyCode::Backspace => {
                         self.cmd_input.pop();
                         if self.cmd_input.is_empty() {
