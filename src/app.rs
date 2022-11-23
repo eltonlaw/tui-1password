@@ -304,6 +304,18 @@ impl App {
             &self.search_state);
     }
 
+    fn enter_command_mode(&mut self, cmd_input: &str) {
+        self.input_mode = InputMode::Command;
+        self.cmd_input = String::from(cmd_input);
+        if cmd_input == "/" {
+            self.search_state = Some(SearchState {
+                pattern: String::from(""),
+                match_idxs: Vec::new(),
+                selected_match_idx: None,
+            });
+        }
+    }
+
     /// Currently only handles KeyEvents, modifies app state based on inputs
     pub fn handle_event(&mut self, event: Event) {
         match event {
@@ -329,19 +341,8 @@ impl App {
                         // FIXME: vim uses `gg` as the "go to first element" key binding
                         KeyCode::Char('g') => self.item_list_table_state.select(Some(0)),
                         KeyCode::Char('n') => self.select_next_search(),
-                        KeyCode::Char(':') => {
-                            self.input_mode = InputMode::Command;
-                            self.cmd_input = String::from(":");
-                        },
-                        KeyCode::Char('/') => {
-                            self.input_mode = InputMode::Command;
-                            self.cmd_input = String::from("/");
-                            self.search_state = Some(SearchState {
-                                pattern: String::from(""),
-                                match_idxs: Vec::new(),
-                                selected_match_idx: None,
-                            });
-                        },
+                        KeyCode::Char(':') => self.enter_command_mode(":"),
+                        KeyCode::Char('/') => self.enter_command_mode("/"),
                         KeyCode::Char('y') => self.yank(),
                         KeyCode::Enter     => {
                             self.populate_item_details();
