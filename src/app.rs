@@ -218,6 +218,7 @@ impl App {
         let cmd = chars.as_str();
         match ch {
             ':' => match cmd {
+                "e" => self.populate_items(),
                 "q" => self.is_running = false,
                 "qa" => self.is_running = false,
                 "sort" => {
