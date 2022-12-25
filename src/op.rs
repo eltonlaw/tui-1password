@@ -4,11 +4,13 @@ use serde_json;
 use std::error;
 use std::fs;
 use std::fs::File;
-use std::io::{BufReader, BufRead};
-use std::process::{Command};
+use std::io;
+use std::io::{BufReader, BufRead, Write};
+use std::process::{Command, Stdio};
 use std::str;
-use std::time::{Duration};
+use std::time::Duration;
 use tracing;
+use rpassword;
 
 use super::err;
 
@@ -93,19 +95,29 @@ impl ItemDetails {
 }
 
 impl Session {
-    pub fn new(token_path: String) -> Result<Self, Box<dyn error::Error>> {
-        if Session::is_valid_cache(&token_path) {
-            let s = Session::from_cache(&token_path);
-            tracing::info!("Started new session: {} {:?}", &token_path, s);
-            return Ok(s);
-        } else {
-            tracing::error!("Failed to started new session, invalid 1password token {} ", &token_path);
-            return Err(err::InvalidSessionError{ token: token_path }.into());
+    fn signin(token_path: &String) -> Result<(),io::Error> {
+		let token_file = File::create(token_path).unwrap();
+		let token_stdio = Stdio::from(token_file);
+        let password = rpassword::prompt_password("Enter your 1password master password: ").unwrap();
+        match Command::new("op")
+            .arg("signin")
+            .arg("-f")
+            .stdin(Stdio::piped())
+            .stdout(token_stdio)
+            .spawn()
+        {
+            Ok(mut child) => {
+                child.stdin.as_ref().unwrap().write(password.as_bytes()).unwrap();
+                child.wait().unwrap();
+                Ok(())
+            },
+            Err(e) => {
+                Err(e)
+            }
         }
     }
     /// True if cached token exists and created less than OP_TOKEN_TTL seconds ago
-    /// FIXME: Use this
-    pub fn is_valid_cache(path: &String) -> bool {
+    pub fn is_active_token_file(path: &String) -> bool {
         if let Ok(metadata) = fs::metadata(path) {
             let token_age = metadata.modified().unwrap().elapsed().unwrap();
             return token_age < Duration::from_secs(OP_TOKEN_TTL);
@@ -114,8 +126,8 @@ impl Session {
         }
     }
     // Currently only takes the first entry in the token
-    pub fn from_cache(path: &String) -> Self {
-        let file = File::open(path).unwrap();
+    pub fn from_token_file(path: &String) -> Result<Self, Box<dyn error::Error>> {
+        let file = File::open(path)?;
         let reader = BufReader::new(file);
         let mut name = String::from("");
         let mut token = String::from("");
@@ -130,7 +142,25 @@ impl Session {
                 token = String::from(&(splits[1])[1..splits[1].len() - 1]);
             }
         }
-        Session { name, token }
+        if name == "" && token == "" {
+            return Err(err::InvalidSessionError{
+                msg: String::from("op failed to sign in. Please check your password and try again")
+            }.into());
+        } else {
+            return Ok(Session { name, token });
+        }
+    }
+    pub fn new(token_path: String) -> Result<Self, Box<dyn error::Error>> {
+        let res = Session::from_token_file(&token_path);
+        if res.is_ok() {
+            if Session::is_active_token_file(&token_path) {
+                return res;
+            } else {
+                println!("Valid token found but expired, please sign in again");
+            }
+        }
+        Session::signin(&token_path)?;
+        return Session::from_token_file(&token_path);
     }
 
     // FIXME: Refresh session
