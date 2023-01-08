@@ -293,7 +293,9 @@ impl App {
                 .enumerate()
                 .filter(|(_, ile)| {
                     // FIXME: Use regex for case insensitive
-                    ile.title.contains(search_state.pattern.as_str())
+                    ile.title
+                        .to_lowercase()
+                        .contains(search_state.pattern.as_str())
                 })
                 .map(|(i, _)| i)
                 .collect();
@@ -383,7 +385,7 @@ impl App {
                             // unwrap() is fine to use in this case cause SearchState will have
                             // been created in the entry to InputMode::Command
                             if let Some(ref mut s) = self.search_state {
-                                s.pattern.push(c);
+                                s.pattern.push(c.to_ascii_lowercase());
                             }
                             self.search_item_list();
                         }
