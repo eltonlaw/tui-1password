@@ -26,7 +26,11 @@ Available via [AUR](https://aur.archlinux.org/packages/tui-1password-git)
 
 ## Quickstart
 
-This is a tui wrapper around the 1password CLI, so [that needs to be installed first](https://1password.com/downloads/command-line/). Pipe the token to a file
+This is a tui wrapper around the 1password CLI, so [that needs to be installed first](https://1password.com/downloads/command-line/).
+
+Running `tui-1password` will prompt you for your master password if you're signing in for the first time.
+
+Alternatively, you can pipe the token to a file
 
 	mkdir -p ~/.tui-1password
     op signin my > ~/.tui-1password/token
@@ -80,7 +84,7 @@ Commands that can be run:
     :sort title asc
     :sort title desc
 
-## Configuration
+ascii_## Configuration
 
 A configuration file is looked for in the following order. If none of these exist, it will loop back to the top and try to create that file in each directory. Wherever it lands, the parent dir of the config file is the app root directory.
 

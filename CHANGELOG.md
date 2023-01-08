@@ -10,6 +10,7 @@
 - G to nav to bottom
 - clipboard option allows args
 - added all the available headers for `Item` and `ItemDetais` (everything in the 1password json response)
+- On login if token file expired or doesn't exist, will ask for password and pass to `op signin`
 
 # 0.1.0
 
