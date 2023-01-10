@@ -9,7 +9,6 @@ use std::io::{BufReader, BufRead, Write};
 use std::process::{Command, Stdio};
 use std::str;
 use std::time::Duration;
-use tracing;
 use rpassword;
 
 use super::err;
@@ -51,7 +50,9 @@ pub struct ItemListEntry {
     pub created_at: String,
     pub updated_at: String,
     pub additional_information: Option<String>,
-    pub urls: Option<Vec<ItemUrl>>
+    pub urls: Option<Vec<ItemUrl>>,
+
+    pub index_term: Option<String>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,6 +92,40 @@ impl ItemDetails {
                 },
 			}
 		}
+    }
+}
+
+impl ItemListEntry {
+    pub fn gen_index_term(&mut self) {
+        match self.index_term {
+            Some(_) => {},
+            None => {
+                let a_info = &self.additional_information
+                    .clone()
+                    .unwrap_or(String::from(""));
+                let urls = match &self.urls {
+                    Some(urls) => {
+                        urls.iter()
+                            .map(|iu| iu.href.as_str())
+                            .collect::<Vec<&str>>()
+                            .join(" ")
+                    },
+                    None => String::from("")
+                };
+                let index_term = format!(
+                    "{} {} {}",
+                    self.title,
+                    a_info,
+                    urls
+                );
+                self.index_term = Some(index_term.to_lowercase());
+            }
+        }
+    }
+    // FIXME: Currently caller ensures pattern is lowercase, probably better to do it here so its
+    // less implicit
+    pub fn has_pattern(&self, pattern: &str) -> bool {
+        self.index_term.as_ref().unwrap().contains(pattern)
     }
 }
 

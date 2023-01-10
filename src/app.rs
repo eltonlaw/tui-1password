@@ -96,7 +96,12 @@ impl App {
 
     pub fn populate_items(&mut self) {
         match self.session.list_items() {
-            Ok(items) => self.items = items,
+            Ok(mut items) => {
+                for item in items.iter_mut() {
+                    item.gen_index_term();
+                }
+                self.items = items;
+            },
             Err(err) => {
                 tracing::error!("Couldn't populate items: {}", err);
                 panic!("Couldn't populate items: {}", err);
@@ -293,9 +298,7 @@ impl App {
                 .enumerate()
                 .filter(|(_, ile)| {
                     // FIXME: Use regex for case insensitive
-                    ile.title
-                        .to_lowercase()
-                        .contains(search_state.pattern.as_str())
+                    ile.has_pattern(search_state.pattern.as_str())
                 })
                 .map(|(i, _)| i)
                 .collect();
