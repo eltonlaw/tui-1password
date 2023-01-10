@@ -26,7 +26,7 @@ pub struct Session {
 pub struct ItemUrl {
     label: Option<String>,
     primary: Option<bool>,
-    href: String,
+    pub href: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,7 +52,8 @@ pub struct ItemListEntry {
     pub additional_information: Option<String>,
     pub urls: Option<Vec<ItemUrl>>,
 
-    pub index_term: Option<String>
+    pub index_term: Option<String>,
+    pub hrefs: Option<String>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,7 +104,7 @@ impl ItemListEntry {
                 let a_info = &self.additional_information
                     .clone()
                     .unwrap_or(String::from(""));
-                let urls = match &self.urls {
+                let hrefs = match &self.urls {
                     Some(urls) => {
                         urls.iter()
                             .map(|iu| iu.href.as_str())
@@ -116,8 +117,9 @@ impl ItemListEntry {
                     "{} {} {}",
                     self.title,
                     a_info,
-                    urls
+                    hrefs
                 );
+                self.hrefs = Some(hrefs);
                 self.index_term = Some(index_term.to_lowercase());
             }
         }

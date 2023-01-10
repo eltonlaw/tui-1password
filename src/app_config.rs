@@ -55,9 +55,9 @@ pub struct AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         let headers = vec![
-            String::from("id"),
             String::from("title"),
-            String::from("updated_at"),
+            String::from("additional_information"),
+            String::from("hrefs"),
         ];
         let root_dir = get_root_dir();
         let debug = true;

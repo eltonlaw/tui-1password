@@ -47,6 +47,18 @@ pub fn new_item_list_row<'a, 'b>(item: &'a op::ItemListEntry, headers: &'b Vec<S
             "id" => &item.id,
             "title" => &item.title,
             "updated_at" => &item.updated_at,
+            "additional_information" => {
+                match &item.additional_information {
+                    Some(a_info) => a_info.as_str(),
+                    None => ""
+                }
+            },
+            "hrefs" => {
+                match &item.hrefs {
+                    Some(hrefs) => hrefs.as_str(),
+                    None => ""
+                }
+            },
             _ => "",
         };
         height = cmp::max(height, val.chars().filter(|c| *c == '\n').count());
