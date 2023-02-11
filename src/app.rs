@@ -114,20 +114,22 @@ impl App {
         self.items.sort_by(
             // FIXME: Would be good to write a macro so that we can create comp functions for every
             // property in the ItemListEntry
+            // FIXME: Create sort index so that we just need to compare sort index (would also
+            // allow multi column sorting)
             match self.item_list_sort_config.header.as_str() {
                 "id" => match self.item_list_sort_config.sort_direction {
                     SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.id.cmp(&b.id),
                     SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.id.cmp(&a.id),
                 },
                 "title" => match self.item_list_sort_config.sort_direction {
-                    SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.title.cmp(&b.title),
-                    SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.title.cmp(&a.title),
+                    SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.title.to_lowercase().cmp(&b.title.to_lowercase()),
+                    SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.title.to_lowercase().cmp(&a.title.to_lowercase()),
                 },
                 "updated_at" => match self.item_list_sort_config.sort_direction {
                     SortDirection::Ascending  => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.updated_at.cmp(&b.updated_at),
                     SortDirection::Descending => |a: &op::ItemListEntry, b: &op::ItemListEntry| b.updated_at.cmp(&a.updated_at),
                 },
-                &_           => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.title.cmp(&b.title),
+                &_           => |a: &op::ItemListEntry, b: &op::ItemListEntry| a.title.to_lowercase().cmp(&b.title.to_lowercase()),
             }
         );
     }
